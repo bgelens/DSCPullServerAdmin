@@ -7,4 +7,7 @@ Primary goals:
 * Access v1 node information
 * Change node ConfigurationName server side
 
+Secondary goals:
+* Do the same with mdb :-)
+
 ![InitialCmdletOutput](images/initialcmdletoutput.png)

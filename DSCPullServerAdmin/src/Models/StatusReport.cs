@@ -22,8 +22,23 @@ namespace DSCPullServerAdmin.src.Models
         public string NodeName;
         public string[] IPAddress;
         public bool RebootRequested;
-        public string Errors;
-        public string StatusData;
-        public string AdditionalData;
+        public List<string> Errors;
+        public List<string> StatusData;
+        public List<PropertyBag> AdditionalData;
+    }
+}
+
+public class PropertyBag
+{
+    public string Key
+    {
+        get;
+        set;
+    }
+
+    public string Value
+    {
+        get;
+        set;
     }
 }

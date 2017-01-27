@@ -1,4 +1,6 @@
-﻿namespace DSCPullServerAdmin.src.Models
+﻿using System.Collections.Generic;
+
+namespace DSCPullServerAdmin.src.Models
 {
     public class RegistrationData
     {
@@ -6,6 +8,6 @@
         public string LCMVersion;
         public string NodeName;
         public string[] IPAddress;
-        public byte[] ConfigurationNames;
+        public List<string> ConfigurationNames;
     }
 }

@@ -12,22 +12,25 @@ namespace DSCPullServerAdmin.src.Cmdlets
     {
         [Parameter(Mandatory = true)]
         public string ESEPath;
-        protected override void ProcessRecord()
-        {
-            JET_INSTANCE instance;
-            JET_SESID sesid;
-            JET_DBID dbid;
-            JET_TABLEID tableid;
 
+        JET_INSTANCE instance;
+        JET_SESID sesid;
+        JET_DBID dbid;
+        JET_TABLEID tableid;
+
+        protected override void BeginProcessing()
+        {
             Api.JetCreateInstance(out instance, "instance");
             Api.JetSetSystemParameter(instance, JET_SESID.Nil, JET_param.CircularLog, 1, null);
             Api.JetInit(ref instance);
             Api.JetBeginSession(instance, out sesid, null, null);
 
-            Api.JetAttachDatabase(sesid, ESEPath, AttachDatabaseGrbit.ReadOnly);
-            Api.JetOpenDatabase(sesid, ESEPath, null, out dbid, OpenDatabaseGrbit.ReadOnly);
-            Api.JetOpenTable(sesid, dbid, "StatusReport", null, 0, OpenTableGrbit.ReadOnly, out tableid);
-
+            Api.JetAttachDatabase(sesid, ESEPath, AttachDatabaseGrbit.None);
+            Api.JetOpenDatabase(sesid, ESEPath, null, out dbid, OpenDatabaseGrbit.None);
+            Api.JetOpenTable(sesid, dbid, "StatusReport", null, 0, OpenTableGrbit.None, out tableid);
+        }
+        protected override void ProcessRecord()
+        {
             Api.MoveBeforeFirst(sesid, tableid);
             while (Api.TryMoveNext(sesid, tableid))
             {
@@ -47,11 +50,20 @@ namespace DSCPullServerAdmin.src.Cmdlets
                 report.NodeName = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["NodeName"]);
                 report.IPAddress = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["IPAddress"]).Split(',');
                 report.RebootRequested = bool.Parse(Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["RebootRequested"]));
-                //report.Errors = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["Errors"]);
-                //report.StatusData = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["StatusData"]);
-                //report.AdditionalData = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["AdditionalData"]);
+                report.Errors = (List<string>)Api.DeserializeObjectFromColumn(sesid, tableid, columnDictionary["Errors"]);
+                report.StatusData = (List<string>)Api.DeserializeObjectFromColumn(sesid, tableid, columnDictionary["StatusData"]);
+                //report.AdditionalData = (List<PropertyBag>)Api.DeserializeObjectFromColumn(sesid, tableid, columnDictionary["AdditionalData"]);
                 WriteObject(report);
             }
+        }
+        protected override void EndProcessing()
+        {
+            Api.JetCloseTable(sesid, tableid);
+            Api.JetEndSession(sesid, EndSessionGrbit.None);
+            Api.JetTerm(instance);
+        }
+        protected override void StopProcessing()
+        {
             Api.JetCloseTable(sesid, tableid);
             Api.JetEndSession(sesid, EndSessionGrbit.None);
             Api.JetTerm(instance);

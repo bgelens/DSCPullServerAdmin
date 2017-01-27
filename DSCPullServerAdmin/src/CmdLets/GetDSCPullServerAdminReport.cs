@@ -3,31 +3,19 @@ using System.Management.Automation;
 using Microsoft.Isam.Esent.Interop;
 using System;
 using DSCPullServerAdmin.src.Models;
+using DSCPullServerAdmin.src.CmdLets;
 
 namespace DSCPullServerAdmin.src.Cmdlets
 {
     [Cmdlet(VerbsCommon.Get,"DSCPullServerAdminReport")]
-    [CmdletBinding()]
-    public class GetDSCPullReport : PSCmdlet
+    public class GetDSCPullReport : BaseCmdlet
     {
-        [Parameter(Mandatory = true)]
-        public string ESEPath;
-
-        JET_INSTANCE instance;
-        JET_SESID sesid;
-        JET_DBID dbid;
-        JET_TABLEID tableid;
-
-        protected override void BeginProcessing()
+        public override string tableName
         {
-            Api.JetCreateInstance(out instance, "instance");
-            Api.JetSetSystemParameter(instance, JET_SESID.Nil, JET_param.CircularLog, 1, null);
-            Api.JetInit(ref instance);
-            Api.JetBeginSession(instance, out sesid, null, null);
-
-            Api.JetAttachDatabase(sesid, ESEPath, AttachDatabaseGrbit.None);
-            Api.JetOpenDatabase(sesid, ESEPath, null, out dbid, OpenDatabaseGrbit.None);
-            Api.JetOpenTable(sesid, dbid, "StatusReport", null, 0, OpenTableGrbit.None, out tableid);
+            get
+            {
+                return "StatusReport";
+            }
         }
         protected override void ProcessRecord()
         {
@@ -55,18 +43,6 @@ namespace DSCPullServerAdmin.src.Cmdlets
                 //report.AdditionalData = (List<PropertyBag>)Api.DeserializeObjectFromColumn(sesid, tableid, columnDictionary["AdditionalData"]);
                 WriteObject(report);
             }
-        }
-        protected override void EndProcessing()
-        {
-            Api.JetCloseTable(sesid, tableid);
-            Api.JetEndSession(sesid, EndSessionGrbit.None);
-            Api.JetTerm(instance);
-        }
-        protected override void StopProcessing()
-        {
-            Api.JetCloseTable(sesid, tableid);
-            Api.JetEndSession(sesid, EndSessionGrbit.None);
-            Api.JetTerm(instance);
         }
     }
 }

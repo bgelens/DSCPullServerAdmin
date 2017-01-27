@@ -3,33 +3,21 @@ using System.Management.Automation;
 using Microsoft.Isam.Esent.Interop;
 using DSCPullServerAdmin.src.Models;
 using System.Text;
+using System;
 
 namespace DSCPullServerAdmin.src.CmdLets
 {
     [Cmdlet(VerbsCommon.Get,"DSCPullServerAdminRegistration")]
-    [CmdletBinding()]
-    public class GetDSCPullClientNode : PSCmdlet
+    public class GetDSCPullClientNode : BaseCmdlet
     {
-        [Parameter(Mandatory = true)]
-        public string ESEPath;
-
-        JET_INSTANCE instance;
-        JET_SESID sesid;
-        JET_DBID dbid;
-        JET_TABLEID tableid;
-
-        protected override void BeginProcessing()
+        public override string tableName
         {
-            Api.JetCreateInstance(out instance, "instance");
-            Api.JetSetSystemParameter(instance, JET_SESID.Nil, JET_param.CircularLog, 1, null);
-            Api.JetInit(ref instance);
-            Api.JetBeginSession(instance, out sesid, null, null);
-
-            Api.JetAttachDatabase(sesid, ESEPath, AttachDatabaseGrbit.None);
-            Api.JetOpenDatabase(sesid, ESEPath, null, out dbid, OpenDatabaseGrbit.None);
-            Api.JetOpenTable(sesid, dbid, "RegistrationData", null, 0, OpenTableGrbit.None, out tableid);
+            get
+            {
+                return "RegistrationData";
+            }
         }
-
+        
         protected override void ProcessRecord()
         {
             Api.MoveBeforeFirst(sesid, tableid);
@@ -44,18 +32,6 @@ namespace DSCPullServerAdmin.src.CmdLets
                 node.ConfigurationNames = (List<string>)Api.DeserializeObjectFromColumn(sesid, tableid, columnDictionary["ConfigurationNames"]);
                 WriteObject(node);
             }
-        }
-        protected override void EndProcessing()
-        {
-            Api.JetCloseTable(sesid, tableid);
-            Api.JetEndSession(sesid, EndSessionGrbit.None);
-            Api.JetTerm(instance);
-        }
-        protected override void StopProcessing()
-        {
-            Api.JetCloseTable(sesid, tableid);
-            Api.JetEndSession(sesid, EndSessionGrbit.None);
-            Api.JetTerm(instance);
         }
     }
 }

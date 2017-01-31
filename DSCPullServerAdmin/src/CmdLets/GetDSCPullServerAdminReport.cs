@@ -4,6 +4,7 @@ using Microsoft.Isam.Esent.Interop;
 using System;
 using DSCPullServerAdmin.src.Models;
 using DSCPullServerAdmin.src.CmdLets;
+using System.Web.Script.Serialization;
 
 namespace DSCPullServerAdmin.src.Cmdlets
 {
@@ -17,6 +18,8 @@ namespace DSCPullServerAdmin.src.Cmdlets
                 return "StatusReport";
             }
         }
+        JavaScriptSerializer Serializer = new JavaScriptSerializer();
+
         protected override void ProcessRecord()
         {
             Api.MoveBeforeFirst(sesid, tableid);
@@ -40,7 +43,7 @@ namespace DSCPullServerAdmin.src.Cmdlets
                 report.RebootRequested = bool.Parse(Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["RebootRequested"]));
                 report.Errors = (List<string>)Api.DeserializeObjectFromColumn(sesid, tableid, columnDictionary["Errors"]);
                 report.StatusData = (List<string>)Api.DeserializeObjectFromColumn(sesid, tableid, columnDictionary["StatusData"]);
-                //report.AdditionalData = (List<PropertyBag>)Api.DeserializeObjectFromColumn(sesid, tableid, columnDictionary["AdditionalData"]);
+                report.AdditionalData = Serializer.Deserialize<List<PropertyBag>>(Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["AdditionalData"]));
                 WriteObject(report);
             }
         }

@@ -5,6 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Management.Automation;
 using Microsoft.Isam.Esent.Interop;
+using Microsoft.Isam.Esent.Interop.Windows10;
+using Microsoft.Isam.Esent.Interop.Windows81;
+using System.IO;
 
 namespace DSCPullServerAdmin.src.CmdLets
 {
@@ -20,16 +23,17 @@ namespace DSCPullServerAdmin.src.CmdLets
 
         [Parameter(Mandatory =true,
             Position = 0)]
-        public string ESEPath;
+        public FileInfo ESEPath;
+
         protected override void BeginProcessing()
         {
             Api.JetCreateInstance(out instance, "instance");
             Api.JetSetSystemParameter(instance, JET_SESID.Nil, JET_param.CircularLog, 1, null);
             Api.JetInit(ref instance);
             Api.JetBeginSession(instance, out sesid, null, null);
-
-            Api.JetAttachDatabase(sesid, ESEPath, AttachDatabaseGrbit.None);
-            Api.JetOpenDatabase(sesid, ESEPath, null, out dbid, OpenDatabaseGrbit.None);
+            //move below to method and call from process?
+            Api.JetAttachDatabase(sesid, ESEPath.FullName.ToString(), AttachDatabaseGrbit.None);
+            Api.JetOpenDatabase(sesid, ESEPath.FullName.ToString(), null, out dbid, OpenDatabaseGrbit.None);
             Api.JetOpenTable(sesid, dbid, tableName, null, 0, OpenTableGrbit.None, out tableid);
         }
 

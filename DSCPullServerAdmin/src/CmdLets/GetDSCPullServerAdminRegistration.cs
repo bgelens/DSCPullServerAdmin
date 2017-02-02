@@ -7,9 +7,19 @@ using System;
 
 namespace DSCPullServerAdmin.src.CmdLets
 {
-    [Cmdlet(VerbsCommon.Get,"DSCPullServerAdminRegistration")]
+    [Cmdlet(VerbsCommon.Get,
+        "DSCPullServerAdminRegistration",
+        DefaultParameterSetName = "List")]
     public class GetDSCPullClientNode : BaseCmdlet
     {
+        [Parameter(ParameterSetName = "NodeName")]
+        [ValidateNotNullOrEmpty()]
+        public string NodeName;
+
+        [Parameter(ParameterSetName = "AgentId")]
+        [ValidateNotNullOrEmpty()]
+        public string AgentId;
+
         public override string tableName
         {
             get
@@ -24,6 +34,23 @@ namespace DSCPullServerAdmin.src.CmdLets
             while (Api.TryMoveNext(sesid, tableid))
             {
                 IDictionary<string, JET_COLUMNID> columnDictionary = Api.GetColumnDictionary(sesid, tableid);
+                if (NodeName != null)
+                {
+                    string nodeName = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["NodeName"]);
+                    if (nodeName != NodeName)
+                    {
+                        continue;
+                    }
+                }
+
+                if (AgentId != null)
+                {
+                    string agentId = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["AgentId"]);
+                    if (AgentId != agentId)
+                    {
+                        continue;
+                    }
+                }
                 RegistrationData node = new RegistrationData();
                 node.AgentId = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["AgentId"]);
                 node.LCMVersion = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["LCMVersion"]);

@@ -31,8 +31,20 @@ namespace DSCPullServerAdmin.src.CmdLets
             Api.JetSetSystemParameter(instance, JET_SESID.Nil, JET_param.CircularLog, 1, null);
             Api.JetInit(ref instance);
             Api.JetBeginSession(instance, out sesid, null, null);
-            //move below to method and call from process?
-            Api.JetAttachDatabase(sesid, ESEPath.FullName.ToString(), AttachDatabaseGrbit.None);
+            try
+            {
+                Api.JetAttachDatabase(sesid, ESEPath.FullName.ToString(), AttachDatabaseGrbit.None);
+            }
+            catch (Exception ex)
+            {
+                this.ClodeJetDB();
+                ErrorRecord errRecord = new ErrorRecord(
+                    ex,
+                    ex.Message,
+                    ErrorCategory.OpenError,
+                    ESEPath.FullName.ToString());
+                this.ThrowTerminatingError(errRecord);
+            }
             Api.JetOpenDatabase(sesid, ESEPath.FullName.ToString(), null, out dbid, OpenDatabaseGrbit.None);
             Api.JetOpenTable(sesid, dbid, tableName, null, 0, OpenTableGrbit.None, out tableid);
         }
@@ -49,7 +61,10 @@ namespace DSCPullServerAdmin.src.CmdLets
 
         private void ClodeJetDB ()
         {
-            Api.JetCloseTable(sesid, tableid);
+            if (tableid.IsInvalid == false)
+            {
+                Api.JetCloseTable(sesid, tableid);
+            }
             Api.JetEndSession(sesid, EndSessionGrbit.None);
             Api.JetTerm(instance);
         }

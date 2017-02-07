@@ -8,8 +8,14 @@ namespace DSCPullServerAdmin.src.CmdLets
     [Cmdlet(VerbsCommon.Get,
         "DSCPullServerAdminDevice",
         DefaultParameterSetName = "List")]
+    [OutputType(typeof(Device))]
     public class GetDSCPullServerAdminDevice : BaseCmdlet
     {
+        [Parameter(ParameterSetName = "TargetName")]
+        [Alias("Name")]
+        [ValidateNotNullOrEmpty()]
+        public string TargetName;
+
         public override string tableName
         {
             get
@@ -23,6 +29,14 @@ namespace DSCPullServerAdmin.src.CmdLets
             while (Api.TryMoveNext(sesid, tableid))
             {
                 IDictionary<string, JET_COLUMNID> columnDictionary = Api.GetColumnDictionary(sesid, tableid);
+                if (TargetName != null)
+                {
+                    string targetName = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["TargetName"]);
+                    if (targetName != TargetName)
+                    {
+                        continue;
+                    }
+                }
                 Device device = new Device();
                 device.TargetName = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["TargetName"]);
                 device.ConfigurationID = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["ConfigurationID"]);

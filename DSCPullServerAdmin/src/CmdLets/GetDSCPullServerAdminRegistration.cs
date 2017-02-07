@@ -8,13 +8,16 @@ namespace DSCPullServerAdmin.src.CmdLets
     [Cmdlet(VerbsCommon.Get,
         "DSCPullServerAdminRegistration",
         DefaultParameterSetName = "List")]
+    [OutputType(typeof(RegistrationData))]
     public class GetDSCPullServerAdminRegistration : BaseCmdlet
     {
         [Parameter(ParameterSetName = "NodeName")]
+        [Alias("Name")]
         [ValidateNotNullOrEmpty()]
         public string NodeName;
 
         [Parameter(ParameterSetName = "AgentId")]
+        [Alias("Id")]
         [ValidateNotNullOrEmpty()]
         public string AgentId;
 

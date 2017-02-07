@@ -8,8 +8,14 @@ using System.Web.Script.Serialization;
 namespace DSCPullServerAdmin.src.CmdLets
 {
     [Cmdlet(VerbsCommon.Get,"DSCPullServerAdminReport")]
+    [OutputType(typeof(StatusReport))]
     public class GetDSCPullServerAdminReport : BaseCmdlet
     {
+        [Parameter(ParameterSetName = "NodeName")]
+        [Alias("Name")]
+        [ValidateNotNullOrEmpty()]
+        public string NodeName;
+
         public override string tableName
         {
             get
@@ -25,6 +31,14 @@ namespace DSCPullServerAdmin.src.CmdLets
             while (Api.TryMoveNext(sesid, tableid))
             {
                 IDictionary<string, JET_COLUMNID> columnDictionary = Api.GetColumnDictionary(sesid, tableid);
+                if (NodeName != null)
+                {
+                    string nodeName = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["NodeName"]);
+                    if (nodeName != NodeName)
+                    {
+                        continue;
+                    }
+                }
                 StatusReport report = new StatusReport();
                 report.StartTime = (DateTime) Api.RetrieveColumnAsDateTime(sesid, tableid, columnDictionary["StartTime"]);
                 report.EndTime = (DateTime)Api.RetrieveColumnAsDateTime(sesid, tableid, columnDictionary["EndTime"]);

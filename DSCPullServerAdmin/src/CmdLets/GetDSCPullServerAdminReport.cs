@@ -3,13 +3,12 @@ using System.Management.Automation;
 using Microsoft.Isam.Esent.Interop;
 using System;
 using DSCPullServerAdmin.src.Models;
-using DSCPullServerAdmin.src.CmdLets;
 using System.Web.Script.Serialization;
 
-namespace DSCPullServerAdmin.src.Cmdlets
+namespace DSCPullServerAdmin.src.CmdLets
 {
     [Cmdlet(VerbsCommon.Get,"DSCPullServerAdminReport")]
-    public class GetDSCPullReport : BaseCmdlet
+    public class GetDSCPullServerAdminReport : BaseCmdlet
     {
         public override string tableName
         {

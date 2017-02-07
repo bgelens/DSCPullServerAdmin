@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Management.Automation;
 using Microsoft.Isam.Esent.Interop;
-using Microsoft.Isam.Esent.Interop.Windows10;
-using Microsoft.Isam.Esent.Interop.Windows81;
 using System.IO;
 
 namespace DSCPullServerAdmin.src.CmdLets

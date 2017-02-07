@@ -2,15 +2,13 @@
 using System.Management.Automation;
 using Microsoft.Isam.Esent.Interop;
 using DSCPullServerAdmin.src.Models;
-using System.Text;
-using System;
 
 namespace DSCPullServerAdmin.src.CmdLets
 {
     [Cmdlet(VerbsCommon.Get,
         "DSCPullServerAdminRegistration",
         DefaultParameterSetName = "List")]
-    public class GetDSCPullClientNode : BaseCmdlet
+    public class GetDSCPullServerAdminRegistration : BaseCmdlet
     {
         [Parameter(ParameterSetName = "NodeName")]
         [ValidateNotNullOrEmpty()]

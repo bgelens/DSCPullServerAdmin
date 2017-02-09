@@ -6,7 +6,7 @@ using System.IO;
 namespace DSCPullServerAdmin.src.CmdLets
 {
     [CmdletBinding()]
-    public abstract class BaseCmdlet : PSCmdlet
+    public abstract class BaseCmdlet : PSCmdlet, IDisposable
     {
         public JET_INSTANCE instance;
         public JET_SESID sesid;
@@ -61,6 +61,22 @@ namespace DSCPullServerAdmin.src.CmdLets
             }
             Api.JetEndSession(sesid, EndSessionGrbit.None);
             Api.JetTerm(instance);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            try
+            {
+                this.ClodeJetDB();
+
+            }
+            catch { }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

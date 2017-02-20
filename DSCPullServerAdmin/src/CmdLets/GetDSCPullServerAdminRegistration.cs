@@ -2,6 +2,7 @@
 using System.Management.Automation;
 using Microsoft.Isam.Esent.Interop;
 using DSCPullServerAdmin.src.Models;
+using DSCPullServerAdmin.src.Helpers;
 
 namespace DSCPullServerAdmin.src.CmdLets
 {
@@ -28,37 +29,44 @@ namespace DSCPullServerAdmin.src.CmdLets
                 return "RegistrationData";
             }
         }
-        
+
         protected override void ProcessRecord()
         {
-            Api.MoveBeforeFirst(sesid, tableid);
-            while (Api.TryMoveNext(sesid, tableid))
+            if (Database.Instance.JetInstance != JET_INSTANCE.Nil)
             {
-                IDictionary<string, JET_COLUMNID> columnDictionary = Api.GetColumnDictionary(sesid, tableid);
-                if (NodeName != null)
+                Api.MoveBeforeFirst(sesid, tableid);
+                while (Api.TryMoveNext(Database.Instance.SessionId, tableid))
                 {
-                    string nodeName = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["NodeName"]);
-                    if (nodeName != NodeName)
+                    IDictionary<string, JET_COLUMNID> columnDictionary = Api.GetColumnDictionary(sesid, tableid);
+                    if (NodeName != null)
                     {
-                        continue;
+                        string nodeName = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["NodeName"]);
+                        if (nodeName != NodeName)
+                        {
+                            continue;
+                        }
                     }
-                }
 
-                if (AgentId != null)
-                {
-                    string agentId = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["AgentId"]);
-                    if (AgentId != agentId)
+                    if (AgentId != null)
                     {
-                        continue;
+                        string agentId = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["AgentId"]);
+                        if (AgentId != agentId)
+                        {
+                            continue;
+                        }
                     }
+                    RegistrationData node = new RegistrationData();
+                    node.AgentId = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["AgentId"]);
+                    node.LCMVersion = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["LCMVersion"]);
+                    node.NodeName = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["NodeName"]);
+                    node.IPAddress = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["IPAddress"]).Split(',');
+                    node.ConfigurationNames = (List<string>)Api.DeserializeObjectFromColumn(sesid, tableid, columnDictionary["ConfigurationNames"]);
+                    WriteObject(node);
                 }
-                RegistrationData node = new RegistrationData();
-                node.AgentId = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["AgentId"]);
-                node.LCMVersion = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["LCMVersion"]);
-                node.NodeName = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["NodeName"]);
-                node.IPAddress = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["IPAddress"]).Split(',');
-                node.ConfigurationNames = (List<string>)Api.DeserializeObjectFromColumn(sesid, tableid, columnDictionary["ConfigurationNames"]);
-                WriteObject(node);
+            }
+            else
+            {
+                // MDB implement later
             }
         }
     }

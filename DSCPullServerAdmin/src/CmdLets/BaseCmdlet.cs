@@ -2,72 +2,79 @@
 using System.Management.Automation;
 using Microsoft.Isam.Esent.Interop;
 using System.IO;
+using DSCPullServerAdmin.src.Helpers;
 
 namespace DSCPullServerAdmin.src.CmdLets
 {
     [CmdletBinding()]
     public abstract class BaseCmdlet : PSCmdlet, IDisposable
     {
-        public JET_INSTANCE instance;
-        public JET_SESID sesid;
-        public JET_DBID dbid;
         public JET_TABLEID tableid;
+        public JET_SESID sesid = Database.Instance.SessionId;
 
         public abstract string tableName { get; }
 
-        [Parameter(Mandatory =true,
-            Position = 0)]
-        public FileInfo ESEPath;
-
         protected override void BeginProcessing()
         {
-            Api.JetCreateInstance(out instance, "instance");
-            Api.JetSetSystemParameter(instance, JET_SESID.Nil, JET_param.CircularLog, 1, null);
-            Api.JetInit(ref instance);
-            Api.JetBeginSession(instance, out sesid, null, null);
-            try
+            if (Database.Instance.DatabaseType == DatabaseType.ESE)
             {
-                Api.JetAttachDatabase(sesid, ESEPath.FullName.ToString(), AttachDatabaseGrbit.None);
+                Api.JetOpenTable(
+                    Database.Instance.SessionId,
+                    Database.Instance.DBId,
+                    tableName,
+                    null,
+                    0,
+                    OpenTableGrbit.None,
+                    out tableid);
             }
-            catch (Exception ex)
+            else if (Database.Instance.DatabaseType == DatabaseType.MDB)
             {
-                this.ClodeJetDB();
-                ErrorRecord errRecord = new ErrorRecord(
-                    ex,
-                    ex.Message,
-                    ErrorCategory.OpenError,
-                    ESEPath.FullName.ToString());
-                this.ThrowTerminatingError(errRecord);
+                // MDB implement later
             }
-            Api.JetOpenDatabase(sesid, ESEPath.FullName.ToString(), null, out dbid, OpenDatabaseGrbit.None);
-            Api.JetOpenTable(sesid, dbid, tableName, null, 0, OpenTableGrbit.None, out tableid);
+            else
+            {
+                throw new Exception("No database has been mounted yet. Please use Mount-DSCPullServerAdminDatabase.");
+            }
         }
 
         protected override void EndProcessing()
         {
-            ClodeJetDB();
+            if (Database.Instance.DatabaseType == DatabaseType.ESE)
+                CloseTable();
+            else
+            {
+                // MDB implement later
+            }
         }
 
         protected override void StopProcessing()
         {
-            ClodeJetDB();
+            if (Database.Instance.DatabaseType == DatabaseType.ESE)
+                CloseTable();
+            else
+            {
+                // MDB implement later
+            }
         }
 
-        private void ClodeJetDB ()
+        private void CloseTable ()
         {
             if (tableid.IsInvalid == false)
             {
-                Api.JetCloseTable(sesid, tableid);
+                Api.JetCloseTable(Database.Instance.SessionId, tableid);
             }
-            Api.JetEndSession(sesid, EndSessionGrbit.None);
-            Api.JetTerm(instance);
         }
 
         protected virtual void Dispose(bool disposing)
         {
             try
             {
-                this.ClodeJetDB();
+                if (Database.Instance.DatabaseType == DatabaseType.ESE)
+                    this.CloseTable();
+                else
+                {
+                    // MDB implement later
+                }
 
             }
             catch { }

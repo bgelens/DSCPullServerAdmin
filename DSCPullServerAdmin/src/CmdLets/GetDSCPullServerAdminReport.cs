@@ -7,7 +7,8 @@ using System.Web.Script.Serialization;
 
 namespace DSCPullServerAdmin.src.CmdLets
 {
-    [Cmdlet(VerbsCommon.Get,"DSCPullServerAdminReport")]
+    [Cmdlet(VerbsCommon.Get,"DSCPullServerAdminReport",
+        DefaultParameterSetName = "List")]
     [OutputType(typeof(StatusReport))]
     public class GetDSCPullServerAdminReport : BaseCmdlet
     {
@@ -15,6 +16,14 @@ namespace DSCPullServerAdmin.src.CmdLets
         [Alias("Name")]
         [ValidateNotNullOrEmpty()]
         public string NodeName;
+
+        [Parameter(ParameterSetName = "NodeName")]
+        [Parameter(ParameterSetName = "List")]
+        public DateTime FromStartTime;
+
+        [Parameter(ParameterSetName = "NodeName")]
+        [Parameter(ParameterSetName = "List")]
+        public DateTime ToStartTime;
 
         public override string tableName
         {
@@ -39,8 +48,19 @@ namespace DSCPullServerAdmin.src.CmdLets
                         continue;
                     }
                 }
+                DateTime StartTime = (DateTime)Api.RetrieveColumnAsDateTime(sesid, tableid, columnDictionary["StartTime"]);
+                if (FromStartTime > StartTime)
+                {
+                    continue;
+                }
+
+                if (ToStartTime != DateTime.MinValue && ToStartTime < StartTime)
+                {
+                    continue;
+                }
+
                 StatusReport report = new StatusReport();
-                report.StartTime = (DateTime) Api.RetrieveColumnAsDateTime(sesid, tableid, columnDictionary["StartTime"]);
+                report.StartTime = StartTime;
                 report.EndTime = (DateTime)Api.RetrieveColumnAsDateTime(sesid, tableid, columnDictionary["EndTime"]);
                 report.LastModifiedTime = (DateTime)Api.RetrieveColumnAsDateTime(sesid, tableid, columnDictionary["LastModifiedTime"]);
                 report.JobId = (Guid) Api.RetrieveColumnAsGuid(sesid, tableid, columnDictionary["JobId"]);

@@ -57,6 +57,7 @@
     <Compile Include="src\CmdLets\GetDSCPullServerAdminReport.cs" />
     <Compile Include="src\CmdLets\GetDSCPullServerAdminRegistration.cs" />
     <Compile Include="src\CmdLets\MountDSCPullServerDatabase.cs" />
+    <Compile Include="src\CmdLets\RemoveDSCPullServerAdminReport.cs" />
     <Compile Include="src\Helpers\Database.cs" />
     <Compile Include="src\Models\Device.cs" />
     <Compile Include="src\Models\RegistrationData.cs" />

@@ -57,7 +57,7 @@ namespace DSCPullServerAdmin.src.CmdLets
                 }
                 catch (Exception ex)
                 {
-                    this.ClodeJetDB();
+                    this.CloseJetDB();
                     ErrorRecord errRecord = new ErrorRecord(
                         ex,
                         ex.Message,
@@ -76,7 +76,7 @@ namespace DSCPullServerAdmin.src.CmdLets
         {
             if (Database.Instance.DatabaseType == DatabaseType.ESE)
             {
-                ClodeJetDB();
+                CloseJetDB();
             }
             else
             {
@@ -84,7 +84,7 @@ namespace DSCPullServerAdmin.src.CmdLets
             }
         }
 
-        private void ClodeJetDB()
+        private void CloseJetDB()
         {
             Api.JetEndSession(Database.Instance.SessionId, EndSessionGrbit.None);
             Api.JetTerm(Database.Instance.JetInstance);

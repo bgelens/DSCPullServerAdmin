@@ -5,12 +5,14 @@ Primary goals:
 - [x] Access reports more easily
 - [x] Access v2 registered node information
 - [x] Access v1 node information
-- [ ] Change node ConfigurationName server side\*<br/>
-\*edb file is locked when Pull Server is active. Probably won't work. For Get operations, maybe use VSS snapshotting if edb is locked
+- [x] Change node ConfigurationName server side - 
+      **Thanks to PR [#4](https://github.com/bgelens/DSCPullServerAdmin/pull/4) from [@rdbartram](https://github.com/rdbartram)!**
 
 Secondary goals:
 - [ ] Do the same with mdb :-)
 - [ ] Convert from edb to mdb
-- [ ] Convert from mdb to edb
+- [ ] Convert from mdb to 
+
+Note that the secondary goals seem to be unlickely as odbc driver is 32bit only...
 
 ![InitialCmdletOutput](images/initialcmdletoutput.png)

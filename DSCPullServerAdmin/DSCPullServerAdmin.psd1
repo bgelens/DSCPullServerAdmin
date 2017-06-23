@@ -12,7 +12,7 @@
 RootModule = 'DSCPullServerAdmin.dll'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.5'
+ModuleVersion = '0.0.0.6'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -72,14 +72,16 @@ Description = 'Get data from your DSC Pull Server database'
 # FunctionsToExport = '*'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = 'Get-DSCPullServerAdminDevice', 
-               'Get-DSCPullServerAdminRegistration', 
-               'Get-DSCPullServerAdminReport',
-               'Mount-DSCPullServerAdminDatabase',
-               'Dismount-DSCPullServerAdminDataBase',
-               'Remove-DSCPullServerAdminReport',
-               'Set-DSCPullServerAdminRegistration',
-               'Remove-DSCPullServerAdminRegistration'
+CmdletsToExport = @(
+	'Get-DSCPullServerAdminDevice', 
+    'Get-DSCPullServerAdminRegistration', 
+    'Get-DSCPullServerAdminReport',
+    'Mount-DSCPullServerAdminDatabase',
+    'Dismount-DSCPullServerAdminDataBase',
+    'Remove-DSCPullServerAdminReport',
+    'Set-DSCPullServerAdminRegistration',
+    'Remove-DSCPullServerAdminRegistration'
+)
 
 # Variables to export from this module
 # VariablesToExport = '*'
@@ -114,7 +116,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = 'Initial release, supporting edb database only.'
+        ReleaseNotes = 'Added new cmdlets Set-DSCPullServerAdminRegistration and Remove-DSCPullServerAdminRegistration contributed by @rdbartram'
 
     } # End of PSData hashtable
 

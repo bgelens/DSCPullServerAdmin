@@ -79,7 +79,7 @@ CmdletsToExport = 'Get-DSCPullServerAdminDevice',
                'Dismount-DSCPullServerAdminDataBase',
                'Remove-DSCPullServerAdminReport',
                'Set-DSCPullServerAdminRegistration',
-               'Set-DSCPullServerAdminRegistration'
+               'Remove-DSCPullServerAdminRegistration'
 
 # Variables to export from this module
 # VariablesToExport = '*'

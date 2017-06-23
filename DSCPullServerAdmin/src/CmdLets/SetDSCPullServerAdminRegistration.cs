@@ -9,19 +9,22 @@ using System.Text;
 
 namespace DSCPullServerAdmin.src.CmdLets
 {
-    [Cmdlet(VerbsCommon.Set,
-        "DSCPullServerAdminRegistration")]
+    [Cmdlet(VerbsCommon.Set, "DSCPullServerAdminRegistration", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High, DefaultParameterSetName = "Id")]
     [OutputType(typeof(void))]
     public class SetDSCPullServerAdminRegistration : BaseCmdlet
     {
-        [Parameter(Mandatory = true, ValueFromPipelineByPropertyName = true)]
+        [Parameter(Mandatory = true, ValueFromPipelineByPropertyName = true, ParameterSetName = "Id")]
         [Alias("Id")]
         [ValidateNotNullOrEmpty()]
-        public string[] AgentId;
+        public string AgentId;
 
         [Parameter(Mandatory = true)]
         [ValidateNotNullOrEmpty()]
-        public string[] Configurations;
+        public string[] ConfigurationNames;
+
+        [Parameter(Mandatory = true, ValueFromPipeline = true, ParameterSetName = "InputObject")]
+        [ValidateNotNullOrEmpty()]
+        public RegistrationData InputObject;
 
         public override string tableName
         {
@@ -42,32 +45,23 @@ namespace DSCPullServerAdmin.src.CmdLets
                         IDictionary<string, JET_COLUMNID> columnDictionary = Api.GetColumnDictionary(sesid, tableid);
 
                         string agentId = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["AgentId"]);
-                        if (AgentId.ToList().Contains(agentId) == false)
+                        if (AgentId != agentId && agentId != InputObject.AgentId)
                         {
                             continue;
                         }
 
-                        Api.JetBeginTransaction(sesid);
+                        if (ShouldProcess(agentId, "Update"))
+                        {
+                            Api.JetBeginTransaction(sesid);
 
-                        Api.JetPrepareUpdate(sesid, tableid, JET_prep.Replace);
+                            Api.JetPrepareUpdate(sesid, tableid, JET_prep.Replace);
 
-                        Api.SerializeObjectToColumn(sesid, tableid, columnDictionary["ConfigurationNames"], Configurations);
+                            Api.SerializeObjectToColumn(sesid, tableid, columnDictionary["ConfigurationNames"], ConfigurationNames.ToList());
 
-                        Api.JetUpdate(sesid, tableid);
-                        Api.JetCommitTransaction(sesid,CommitTransactionGrbit.LazyFlush);
-
-                    Api.JetBeginTransaction(sesid);
-                    Api.JetPrepareUpdate(sesid, tableid, JET_prep.Replace);
-
-                    string fullString = String.Join(String.Empty, Configurations.ToArray());
-                    byte[] byteArray = Encoding.UTF8.GetBytes(fullString);
-
-                    //Api.SetColumn(sesid, tableid, columnDictionary["ConfigurationNames"], byteArray);
-                    Api.SerializeObjectToColumn(sesid, tableid, columnDictionary["ConfigurationNames"], Configurations.ToList());
-                    Api.JetUpdate(sesid, tableid);
-                    Api.JetCommitTransaction(sesid, CommitTransactionGrbit.None);
-
-                }
+                            Api.JetUpdate(sesid, tableid);
+                            Api.JetCommitTransaction(sesid, CommitTransactionGrbit.LazyFlush);
+                        }
+                    }
                 }
                 else
                 {

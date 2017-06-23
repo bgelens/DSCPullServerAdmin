@@ -6,15 +6,18 @@ using DSCPullServerAdmin.src.Helpers;
 
 namespace DSCPullServerAdmin.src.CmdLets
 {
-    [Cmdlet(VerbsCommon.Remove,
-        "DSCPullServerAdminRegistration")]
+    [Cmdlet(VerbsCommon.Remove, "DSCPullServerAdminRegistration", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High, DefaultParameterSetName = "Id")]
     [OutputType(typeof(void))]
     public class RemoveDSCPullServerAdminRegistration : BaseCmdlet
     {
-        [Parameter(Mandatory = true, ValueFromPipelineByPropertyName = true)]
+        [Parameter(Mandatory = true, ValueFromPipelineByPropertyName = true, ParameterSetName = "Id")]
         [Alias("Id")]
         [ValidateNotNullOrEmpty()]
         public string AgentId;
+
+        [Parameter(Mandatory = true, ValueFromPipeline = true, ParameterSetName = "InputObject")]
+        [ValidateNotNullOrEmpty()]
+        public RegistrationData InputObject;
 
         public override string tableName
         {
@@ -34,12 +37,14 @@ namespace DSCPullServerAdmin.src.CmdLets
                     IDictionary<string, JET_COLUMNID> columnDictionary = Api.GetColumnDictionary(sesid, tableid);
 
                     string agentId = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["AgentId"]);
-                    if (AgentId != agentId)
+                    if (AgentId != agentId && agentId != InputObject.AgentId)
                     {
                         continue;
                     }
 
-                    Api.JetDelete(sesid, tableid);
+                    if(ShouldProcess(agentId, "Remove")) {
+                        Api.JetDelete(sesid, tableid);
+                    }
                 }
             }
             else

@@ -9,7 +9,11 @@ using System.Text;
 
 namespace DSCPullServerAdmin.src.CmdLets
 {
-    [Cmdlet(VerbsCommon.Set, "DSCPullServerAdminRegistration", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High, DefaultParameterSetName = "Id")]
+    [Cmdlet(VerbsCommon.Set,
+        "DSCPullServerAdminRegistration",
+        SupportsShouldProcess = true, 
+        ConfirmImpact = ConfirmImpact.High, 
+        DefaultParameterSetName = "Id")]
     [OutputType(typeof(void))]
     public class SetDSCPullServerAdminRegistration : BaseCmdlet
     {
@@ -20,7 +24,7 @@ namespace DSCPullServerAdmin.src.CmdLets
 
         [Parameter(Mandatory = true)]
         [ValidateNotNullOrEmpty()]
-        public string[] ConfigurationNames;
+        public string[] ConfigurationName;
 
         [Parameter(Mandatory = true, ValueFromPipeline = true, ParameterSetName = "InputObject")]
         [ValidateNotNullOrEmpty()]
@@ -36,37 +40,37 @@ namespace DSCPullServerAdmin.src.CmdLets
 
         protected override void ProcessRecord()
         {
-                if (Database.Instance.JetInstance != JET_INSTANCE.Nil)
-                {
+            if (Database.Instance.JetInstance != JET_INSTANCE.Nil)
+            {
                     
-                    Api.MoveBeforeFirst(sesid, tableid);
-                    while (Api.TryMoveNext(Database.Instance.SessionId, tableid))
+                Api.MoveBeforeFirst(sesid, tableid);
+                while (Api.TryMoveNext(Database.Instance.SessionId, tableid))
+                {
+                    IDictionary<string, JET_COLUMNID> columnDictionary = Api.GetColumnDictionary(sesid, tableid);
+
+                    string agentId = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["AgentId"]);
+                    if (AgentId != agentId && agentId != InputObject.AgentId)
                     {
-                        IDictionary<string, JET_COLUMNID> columnDictionary = Api.GetColumnDictionary(sesid, tableid);
+                        continue;
+                    }
 
-                        string agentId = Api.RetrieveColumnAsString(sesid, tableid, columnDictionary["AgentId"]);
-                        if (AgentId != agentId && agentId != InputObject.AgentId)
-                        {
-                            continue;
-                        }
+                    if (ShouldProcess(agentId, "Update"))
+                    {
+                        Api.JetBeginTransaction(sesid);
 
-                        if (ShouldProcess(agentId, "Update"))
-                        {
-                            Api.JetBeginTransaction(sesid);
+                        Api.JetPrepareUpdate(sesid, tableid, JET_prep.Replace);
 
-                            Api.JetPrepareUpdate(sesid, tableid, JET_prep.Replace);
+                        Api.SerializeObjectToColumn(sesid, tableid, columnDictionary["ConfigurationNames"], ConfigurationName.ToList());
 
-                            Api.SerializeObjectToColumn(sesid, tableid, columnDictionary["ConfigurationNames"], ConfigurationNames.ToList());
-
-                            Api.JetUpdate(sesid, tableid);
-                            Api.JetCommitTransaction(sesid, CommitTransactionGrbit.LazyFlush);
-                        }
+                        Api.JetUpdate(sesid, tableid);
+                        Api.JetCommitTransaction(sesid, CommitTransactionGrbit.LazyFlush);
                     }
                 }
-                else
-                {
-                    // MDB implement later
-                }
+            }
+            else
+            {
+                // MDB implement later
+            }
         }
     }
 }

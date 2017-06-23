@@ -6,7 +6,11 @@ using DSCPullServerAdmin.src.Helpers;
 
 namespace DSCPullServerAdmin.src.CmdLets
 {
-    [Cmdlet(VerbsCommon.Remove, "DSCPullServerAdminRegistration", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High, DefaultParameterSetName = "Id")]
+    [Cmdlet(VerbsCommon.Remove, 
+        "DSCPullServerAdminRegistration", 
+        SupportsShouldProcess = true, 
+        ConfirmImpact = ConfirmImpact.High, 
+        DefaultParameterSetName = "Id")]
     [OutputType(typeof(void))]
     public class RemoveDSCPullServerAdminRegistration : BaseCmdlet
     {

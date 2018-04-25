@@ -6,6 +6,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <StartAction>Program</StartAction>
     <StartProgram>c:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe</StartProgram>
-    <StartArguments>-NoProfile -NoExit -NoLogo -Command "Import-Module .\DSCPullServerAdmin.dll"%3b Get-Command -Module DSCPullServerAdmin</StartArguments>
+    <StartArguments>-NoProfile -NoExit -NoLogo -Command "Import-Module .\DSCPullServerAdmin.psd1"%3b Get-Command -Module DSCPullServerAdmin</StartArguments>
   </PropertyGroup>
 </Project>

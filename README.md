@@ -19,3 +19,31 @@ Primary goals:
 ![InitialCmdletOutput](images/initialcmdletoutput.png)
 
 ![InitialCmdletOutput2](images/initialcmdletoutput2.png)
+
+## SQL Interfacing
+
+Basic interfacing existing SQL DB:
+
+```powershell
+Connect-DSCPullServerAdminSQLInstance -InstanceName myhost\myinstance -Credential (Get-Credential)
+Set-DSCPullServerAdminSQLDatabase -Name DSC
+Get-DscPullServerAdminSQLRegistration -Name LCMClient
+```
+
+Create new DB and import data from edb:
+
+```powershell
+Connect-DSCPullServerAdminSQLInstance -InstanceName myhost\myinstance -Credential (Get-Credential)
+New-DSCPullServerAdminSQLDatabase -Name DSC02 #new will auto connect
+Mount-DSCPullServerAdminDatabase -ESEPath .\Devices.edb
+Import-DSCPullServerAdminSQLDataFromEDB #default skip if exist, -Force to overwrite
+```
+
+Connect existing DB and import data from edb:
+
+```powershell
+Connect-DSCPullServerAdminSQLInstance -InstanceName myhost\myinstance -Credential (Get-Credential)
+Set-DSCPullServerAdminSQLDatabase -Name DSC
+Mount-DSCPullServerAdminDatabase -ESEPath .\Devices.edb
+Import-DSCPullServerAdminSQLDataFromEDB #default skip if exist, -Force to overwrite
+```

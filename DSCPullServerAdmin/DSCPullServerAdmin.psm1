@@ -1,4 +1,4 @@
-Import-Module $PSScriptRoot\DSCPullServerAdmin.dll -Prefix ESE
+#Import-Module $PSScriptRoot\DSCPullServerAdmin.dll -Prefix ESE
 
 class DSCDevice {
     [string]
@@ -246,19 +246,18 @@ function New-DSCPullServerAdminRegistration {
     )
 
     begin {
-        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
-            if ($false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
-                break
-            } else {
-                if ($Connection -is [DSCPullServerESEConnection]) {
-                    $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
-                }
+        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection' -and
+            $false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
+            break
+        } elseif ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
+            if ($Connection -is [DSCPullServerESEConnection]) {
+                $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
+            }
 
-                if ($Connection -is [DSCPullServerSQLConnection]) {
-                    $PSBoundParameters["SQLServer"] = $Connection.Server
-                    if ($null -ne $Connection.Credential) {
-                        $PSBoundParameters["SQLCredential"] = $Connection.Credential
-                    }
+            if ($Connection -is [DSCPullServerSQLConnection]) {
+                $PSBoundParameters["SQLServer"] = $Connection.SQLServer
+                if ($null -ne $Connection.Credential) {
+                    $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
         }
@@ -267,11 +266,11 @@ function New-DSCPullServerAdminRegistration {
     process {
         switch ($Connection.Type) {
 
-            [DSCPullServerConnectionType]::ESE {
+            ([DSCPullServerConnectionType]::ESE).ToString() {
                 Write-Warning "Add new agent registrations to the ESE database is not currently supported"
             }
 
-            [DSCPullServerConnectionType]::SQL {
+            ([DSCPullServerConnectionType]::SQL).ToString() {
                 $Command = "INSERT INTO RegistrationData ({0}) VALUES ({1})"
 
                 $Columns = @("AgentId", "LCMVersion", "NodeName", "IPAddress", "ConfigurationNames")
@@ -350,19 +349,18 @@ function Set-DSCPullServerAdminRegistration {
     )
 
     begin {
-        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
-            if ($false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
-                break
-            } else {
-                if ($Connection -is [DSCPullServerESEConnection]) {
-                    $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
-                }
+        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection' -and
+            $false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
+            break
+        } elseif ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
+            if ($Connection -is [DSCPullServerESEConnection]) {
+                $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
+            }
 
-                if ($Connection -is [DSCPullServerSQLConnection]) {
-                    $PSBoundParameters["SQLServer"] = $Connection.Server
-                    if ($null -ne $Connection.Credential) {
-                        $PSBoundParameters["SQLCredential"] = $Connection.Credential
-                    }
+            if ($Connection -is [DSCPullServerSQLConnection]) {
+                $PSBoundParameters["SQLServer"] = $Connection.SQLServer
+                if ($null -ne $Connection.Credential) {
+                    $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
         }
@@ -371,13 +369,13 @@ function Set-DSCPullServerAdminRegistration {
     process {
         switch ($Connection.Type) {
 
-            [DSCPullServerConnectionType]::ESE {
+            ([DSCPullServerConnectionType]::ESE).ToString() {
                 Write-Warning "Only updating agent configuration names in the ESE database is currently supported"
 
                 Set-ESEDSCPullServerAdminRegistration -AgentId $AgentId -ConfigurationName $ConfigurationNames
             }
 
-            [DSCPullServerConnectionType]::SQL {
+            ([DSCPullServerConnectionType]::SQL).ToString() {
                 $Command = "UPDATE RegistrationData SET {0} WHERE AgentId = '$AgentId'"
 
                 $Columns = @("LCMVersion", "NodeName", "IPAddress", "ConfigurationNames")
@@ -440,19 +438,18 @@ function Remove-DSCPullServerAdminRegistration {
     )
 
     begin {
-        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
-            if ($false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
-                break
-            } else {
-                if ($Connection -is [DSCPullServerESEConnection]) {
-                    $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
-                }
+        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection' -and
+            $false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
+            break
+        } elseif ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
+            if ($Connection -is [DSCPullServerESEConnection]) {
+                $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
+            }
 
-                if ($Connection -is [DSCPullServerSQLConnection]) {
-                    $PSBoundParameters["SQLServer"] = $Connection.Server
-                    if ($null -ne $Connection.Credential) {
-                        $PSBoundParameters["SQLCredential"] = $Connection.Credential
-                    }
+            if ($Connection -is [DSCPullServerSQLConnection]) {
+                $PSBoundParameters["SQLServer"] = $Connection.SQLServer
+                if ($null -ne $Connection.Credential) {
+                    $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
         }
@@ -461,11 +458,11 @@ function Remove-DSCPullServerAdminRegistration {
     process {
         switch ($Connection.Type) {
 
-            [DSCPullServerConnectionType]::ESE {
+            ([DSCPullServerConnectionType]::ESE).ToString() {
                 Remove-ESEDSCPullServerAdminRegistration -AgentId $AgentId
             }
 
-            [DSCPullServerConnectionType]::SQL {
+            ([DSCPullServerConnectionType]::SQL).ToString() {
                 $Command = "DELETE FROM RegistrationData WHERE AgentId = '$AgentId'"
 
                 $Output = Invoke-DSCPullServerSQLCommand @PSBoundParameters -CommandType Set -Script $Command
@@ -508,19 +505,18 @@ function Get-DSCPullServerAdminRegistration {
     )
 
     begin {
-        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
-            if ($false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
-                break
-            } else {
-                if ($Connection -is [DSCPullServerESEConnection]) {
-                    $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
-                }
+        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection' -and
+            $false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
+            break
+        } elseif ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
+            if ($Connection -is [DSCPullServerESEConnection]) {
+                $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
+            }
 
-                if ($Connection -is [DSCPullServerSQLConnection]) {
-                    $PSBoundParameters["SQLServer"] = $Connection.Server
-                    if ($null -ne $Connection.Credential) {
-                        $PSBoundParameters["SQLCredential"] = $Connection.Credential
-                    }
+            if ($Connection -is [DSCPullServerSQLConnection]) {
+                $PSBoundParameters["SQLServer"] = $Connection.SQLServer
+                if ($null -ne $Connection.Credential) {
+                    $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
         }
@@ -529,7 +525,7 @@ function Get-DSCPullServerAdminRegistration {
     process {
         switch ($Connection.Type) {
 
-            [DSCPullServerConnectionType]::ESE {
+            ([DSCPullServerConnectionType]::ESE).ToString() {
                 $Params = @{}
                 if ($PSBoundParameters.ContainsKey("AgentId")) {
                     $Params.Add("AgentId", $AgentId)
@@ -540,7 +536,7 @@ function Get-DSCPullServerAdminRegistration {
                 Get-ESEDSCPullServerAdminRegistration @Params
             }
 
-            [DSCPullServerConnectionType]::SQL {
+            ([DSCPullServerConnectionType]::SQL).ToString() {
                 $Command = "SELECT * FROM RegistrationData"
                 $Filters = @()
                 if ($PSBoundParameters.ContainsKey("AgentId")) {
@@ -623,19 +619,18 @@ function New-DSCPullServerAdminDevice {
     )
 
     begin {
-        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
-            if ($false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
-                break
-            } else {
-                if ($Connection -is [DSCPullServerESEConnection]) {
-                    $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
-                }
+        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection' -and
+            $false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
+            break
+        } elseif ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
+            if ($Connection -is [DSCPullServerESEConnection]) {
+                $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
+            }
 
-                if ($Connection -is [DSCPullServerSQLConnection]) {
-                    $PSBoundParameters["SQLServer"] = $Connection.Server
-                    if ($null -ne $Connection.Credential) {
-                        $PSBoundParameters["SQLCredential"] = $Connection.Credential
-                    }
+            if ($Connection -is [DSCPullServerSQLConnection]) {
+                $PSBoundParameters["SQLServer"] = $Connection.SQLServer
+                if ($null -ne $Connection.Credential) {
+                    $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
         }
@@ -644,11 +639,11 @@ function New-DSCPullServerAdminDevice {
     process {
         switch ($Connection.Type) {
 
-            [DSCPullServerConnectionType]::ESE {
+            ([DSCPullServerConnectionType]::ESE).ToString() {
                 Write-Warning "Add new agent registrations to the ESE database is not currently supported"
             }
 
-            [DSCPullServerConnectionType]::SQL {
+            ([DSCPullServerConnectionType]::SQL).ToString() {
                 $Command = "INSERT INTO Devices ({0}) VALUES ({1})"
 
                 $Columns = @("TargetName", "ConfigurationID", "ServerCheckSum", "TargetCheckSum", "NodeCompliant", "LastComplianceTime", "LastHeartbeatTime", "Dirty", "StatusCode")
@@ -731,19 +726,18 @@ function Set-DSCPullServerAdminDevice {
     )
 
     begin {
-        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
-            if ($false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
-                break
-            } else {
-                if ($Connection -is [DSCPullServerESEConnection]) {
-                    $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
-                }
+        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection' -and
+            $false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
+            break
+        } elseif ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
+            if ($Connection -is [DSCPullServerESEConnection]) {
+                $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
+            }
 
-                if ($Connection -is [DSCPullServerSQLConnection]) {
-                    $PSBoundParameters["SQLServer"] = $Connection.Server
-                    if ($null -ne $Connection.Credential) {
-                        $PSBoundParameters["SQLCredential"] = $Connection.Credential
-                    }
+            if ($Connection -is [DSCPullServerSQLConnection]) {
+                $PSBoundParameters["SQLServer"] = $Connection.SQLServer
+                if ($null -ne $Connection.Credential) {
+                    $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
         }
@@ -752,11 +746,11 @@ function Set-DSCPullServerAdminDevice {
     process {
         switch ($Connection.Type) {
 
-            [DSCPullServerConnectionType]::ESE {
+            ([DSCPullServerConnectionType]::ESE).ToString() {
                 Write-Warning "Updating version 1 agents in the ESE database is not currently supported"
             }
 
-            [DSCPullServerConnectionType]::SQL {
+            ([DSCPullServerConnectionType]::SQL).ToString() {
                 $Command = "UPDATE Devices SET {0} WHERE TargetName = '$TargetName'"
 
                 $Columns = @("ConfigurationID", "ServerCheckSum", "TargetCheckSum", "NodeCompliant", "LastComplianceTime", "LastHeartbeatTime", "Dirty", "StatusCode")
@@ -807,19 +801,18 @@ function Remove-DSCPullServerAdminDevice {
     )
 
     begin {
-        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
-            if ($false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
-                break
-            } else {
-                if ($Connection -is [DSCPullServerESEConnection]) {
-                    $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
-                }
+        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection' -and
+            $false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
+            break
+        } elseif ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
+            if ($Connection -is [DSCPullServerESEConnection]) {
+                $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
+            }
 
-                if ($Connection -is [DSCPullServerSQLConnection]) {
-                    $PSBoundParameters["SQLServer"] = $Connection.Server
-                    if ($null -ne $Connection.Credential) {
-                        $PSBoundParameters["SQLCredential"] = $Connection.Credential
-                    }
+            if ($Connection -is [DSCPullServerSQLConnection]) {
+                $PSBoundParameters["SQLServer"] = $Connection.SQLServer
+                if ($null -ne $Connection.Credential) {
+                    $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
         }
@@ -828,11 +821,11 @@ function Remove-DSCPullServerAdminDevice {
     process {
         switch ($Connection.Type) {
 
-            [DSCPullServerConnectionType]::ESE {
+            ([DSCPullServerConnectionType]::ESE).ToString() {
                 Write-Warning "Removing version 1 agents in the ESE database is not currently supported"
             }
 
-            [DSCPullServerConnectionType]::SQL {
+            ([DSCPullServerConnectionType]::SQL).ToString() {
                 $Command = "DELETE FROM Devices WHERE TargetName = '$TargetName'"
 
                 $Output = Invoke-DSCPullServerSQLCommand @PSBoundParameters -CommandType Set -Script $Command
@@ -875,19 +868,18 @@ function Get-DSCPullServerAdminDevice {
     )
 
     begin {
-        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
-            if ($false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
-                break
-            } else {
-                if ($Connection -is [DSCPullServerESEConnection]) {
-                    $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
-                }
+        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection' -and
+            $false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
+            break
+        } elseif ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
+            if ($Connection -is [DSCPullServerESEConnection]) {
+                $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
+            }
 
-                if ($Connection -is [DSCPullServerSQLConnection]) {
-                    $PSBoundParameters["SQLServer"] = $Connection.Server
-                    if ($null -ne $Connection.Credential) {
-                        $PSBoundParameters["SQLCredential"] = $Connection.Credential
-                    }
+            if ($Connection -is [DSCPullServerSQLConnection]) {
+                $PSBoundParameters["SQLServer"] = $Connection.SQLServer
+                if ($null -ne $Connection.Credential) {
+                    $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
         }
@@ -896,7 +888,7 @@ function Get-DSCPullServerAdminDevice {
     process {
         switch ($Connection.Type) {
 
-            [DSCPullServerConnectionType]::ESE {
+            ([DSCPullServerConnectionType]::ESE).ToString() {
                 $Params = @{}
                 if ($PSBoundParameters.ContainsKey("AgentId")) {
                     $Params.Add("AgentId", $AgentId)
@@ -907,7 +899,7 @@ function Get-DSCPullServerAdminDevice {
                 Get-ESEDSCPullServerAdminRegistration @Params
             }
 
-            [DSCPullServerConnectionType]::SQL {
+            ([DSCPullServerConnectionType]::SQL).ToString() {
                 $Command = "SELECT * FROM RegistrationData"
                 $Filters = @()
                 if ($PSBoundParameters.ContainsKey("AgentId")) {
@@ -1041,19 +1033,18 @@ function Get-DSCPullServerAdminStatusReport {
     )
 
     begin {
-        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
-            if ($false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
-                break
-            } else {
-                if ($Connection -is [DSCPullServerESEConnection]) {
-                    $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
-                }
+        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection' -and
+            $false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
+            break
+        } elseif ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
+            if ($Connection -is [DSCPullServerESEConnection]) {
+                $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
+            }
 
-                if ($Connection -is [DSCPullServerSQLConnection]) {
-                    $PSBoundParameters["SQLServer"] = $Connection.Server
-                    if ($null -ne $Connection.Credential) {
-                        $PSBoundParameters["SQLCredential"] = $Connection.Credential
-                    }
+            if ($Connection -is [DSCPullServerSQLConnection]) {
+                $PSBoundParameters["SQLServer"] = $Connection.SQLServer
+                if ($null -ne $Connection.Credential) {
+                    $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
         }
@@ -1062,7 +1053,7 @@ function Get-DSCPullServerAdminStatusReport {
     process {
         switch ($Connection.Type) {
 
-            [DSCPullServerConnectionType]::ESE {
+            ([DSCPullServerConnectionType]::ESE).ToString() {
                 $Params = @{}
                 if ($PSBoundParameters.ContainsKey("FromStartTime")) {
                     $Params.Add("FromStartTime", $FromStartTime)
@@ -1073,7 +1064,7 @@ function Get-DSCPullServerAdminStatusReport {
                 Get-ESEDSCPullServerAdminReport -NodeName $NodeName @Params
             }
 
-            [DSCPullServerConnectionType]::SQL {
+            ([DSCPullServerConnectionType]::SQL).ToString() {
                 $Command = "SELECT * FROM StatusReport"
                 $Filters = @("Id = '{0}'" -f $AgentId)
 
@@ -1134,19 +1125,18 @@ function Remove-DSCPullServerAdminStatusReport {
     )
 
     begin {
-        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
-            if ($false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
-                break
-            } else {
-                if ($Connection -is [DSCPullServerESEConnection]) {
-                    $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
-                }
+        if ($pscmdlet.ParameterSetName -eq 'DefaultConnection' -and
+            $false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
+            break
+        } elseif ($pscmdlet.ParameterSetName -eq 'DefaultConnection') {
+            if ($Connection -is [DSCPullServerESEConnection]) {
+                $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
+            }
 
-                if ($Connection -is [DSCPullServerSQLConnection]) {
-                    $PSBoundParameters["SQLServer"] = $Connection.Server
-                    if ($null -ne $Connection.Credential) {
-                        $PSBoundParameters["SQLCredential"] = $Connection.Credential
-                    }
+            if ($Connection -is [DSCPullServerSQLConnection]) {
+                $PSBoundParameters["SQLServer"] = $Connection.SQLServer
+                if ($null -ne $Connection.Credential) {
+                    $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
         }
@@ -1155,7 +1145,7 @@ function Remove-DSCPullServerAdminStatusReport {
     process {
         switch ($Connection.Type) {
 
-            [DSCPullServerConnectionType]::ESE {
+            ([DSCPullServerConnectionType]::ESE).ToString() {
                 Write-Warning "Deleting Status Reports from ESE database using JobID or End Date "
                 $Params = @{}
                 if ($PSBoundParameters.ContainsKey("FromStartTime")) {
@@ -1167,7 +1157,7 @@ function Remove-DSCPullServerAdminStatusReport {
                 Remove-ESEDSCPullServerAdminReport @Params
             }
 
-            [DSCPullServerConnectionType]::SQL {
+            ([DSCPullServerConnectionType]::SQL).ToString() {
                 $Command = "DELETE FROM RegistrationData {0}"
                 $Filters = @()
 
@@ -1194,7 +1184,7 @@ function Remove-DSCPullServerAdminStatusReport {
     }
 }
 
-function Import-DSCPullServerAdminSQLDataFromEDB {
+function Import-DSCPullServerAdminData {
     [cmdletbinding()]
     param(
         [Parameter(Mandatory)]

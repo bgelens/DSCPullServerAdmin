@@ -1,4 +1,4 @@
-#Import-Module $PSScriptRoot\DSCPullServerAdmin.dll -Prefix ESE
+Import-Module $PSScriptRoot\DSCPullServerAdmin.dll -Prefix ESE
 
 class DSCDevice {
     [string]
@@ -260,6 +260,18 @@ function New-DSCPullServerAdminRegistration {
                     $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
+        } else {
+            $Connection = [DSCPullServerConnection]::New($pscmdlet.ParameterSetName)
+        }
+
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Mount-ESEDSCPullServerAdminDatabase -ESEPath $PSBoundParameters["ESEFilePath"]
+        }
+    }
+
+    end {
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Dismount-ESEDSCPullServerAdminDatabase
         }
     }
 
@@ -363,6 +375,18 @@ function Set-DSCPullServerAdminRegistration {
                     $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
+        } else {
+            $Connection = [DSCPullServerConnection]::New($pscmdlet.ParameterSetName)
+        }
+
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Mount-ESEDSCPullServerAdminDatabase -ESEPath $PSBoundParameters["ESEFilePath"]
+        }
+    }
+
+    end {
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Dismount-ESEDSCPullServerAdminDatabase
         }
     }
 
@@ -452,6 +476,18 @@ function Remove-DSCPullServerAdminRegistration {
                     $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
+        } else {
+            $Connection = [DSCPullServerConnection]::New($pscmdlet.ParameterSetName)
+        }
+
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Mount-ESEDSCPullServerAdminDatabase -ESEPath $PSBoundParameters["ESEFilePath"]
+        }
+    }
+
+    end {
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Dismount-ESEDSCPullServerAdminDatabase
         }
     }
 
@@ -519,6 +555,18 @@ function Get-DSCPullServerAdminRegistration {
                     $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
+        } else {
+            $Connection = [DSCPullServerConnection]::New($pscmdlet.ParameterSetName)
+        }
+
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Mount-ESEDSCPullServerAdminDatabase -ESEPath $PSBoundParameters["ESEFilePath"]
+        }
+    }
+
+    end {
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Dismount-ESEDSCPullServerAdminDatabase
         }
     }
 
@@ -633,6 +681,18 @@ function New-DSCPullServerAdminDevice {
                     $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
+        } else {
+            $Connection = [DSCPullServerConnection]::New($pscmdlet.ParameterSetName)
+        }
+
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Mount-ESEDSCPullServerAdminDatabase -ESEPath $PSBoundParameters["ESEFilePath"]
+        }
+    }
+
+    end {
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Dismount-ESEDSCPullServerAdminDatabase
         }
     }
 
@@ -740,6 +800,18 @@ function Set-DSCPullServerAdminDevice {
                     $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
+        } else {
+            $Connection = [DSCPullServerConnection]::New($pscmdlet.ParameterSetName)
+        }
+
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Mount-ESEDSCPullServerAdminDatabase -ESEPath $PSBoundParameters["ESEFilePath"]
+        }
+    }
+
+    end {
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Dismount-ESEDSCPullServerAdminDatabase
         }
     }
 
@@ -815,6 +887,18 @@ function Remove-DSCPullServerAdminDevice {
                     $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
+        } else {
+            $Connection = [DSCPullServerConnection]::New($pscmdlet.ParameterSetName)
+        }
+
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Mount-ESEDSCPullServerAdminDatabase -ESEPath $PSBoundParameters["ESEFilePath"]
+        }
+    }
+
+    end {
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Dismount-ESEDSCPullServerAdminDatabase
         }
     }
 
@@ -882,6 +966,18 @@ function Get-DSCPullServerAdminDevice {
                     $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
+        } else {
+            $Connection = [DSCPullServerConnection]::New($pscmdlet.ParameterSetName)
+        }
+
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Mount-ESEDSCPullServerAdminDatabase -ESEPath $PSBoundParameters["ESEFilePath"]
+        }
+    }
+
+    end {
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Dismount-ESEDSCPullServerAdminDatabase
         }
     }
 
@@ -1047,6 +1143,18 @@ function Get-DSCPullServerAdminStatusReport {
                     $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
+        } else {
+            $Connection = [DSCPullServerConnection]::New($pscmdlet.ParameterSetName)
+        }
+
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Mount-ESEDSCPullServerAdminDatabase -ESEPath $PSBoundParameters["ESEFilePath"]
+        }
+    }
+
+    end {
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Dismount-ESEDSCPullServerAdminDatabase
         }
     }
 
@@ -1139,6 +1247,18 @@ function Remove-DSCPullServerAdminStatusReport {
                     $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
                 }
             }
+        } else {
+            $Connection = [DSCPullServerConnection]::New($pscmdlet.ParameterSetName)
+        }
+
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Mount-ESEDSCPullServerAdminDatabase -ESEPath $PSBoundParameters["ESEFilePath"]
+        }
+    }
+
+    end {
+        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
+            Dismount-ESEDSCPullServerAdminDatabase
         }
     }
 

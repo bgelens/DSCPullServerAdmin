@@ -13,37 +13,39 @@ Primary goals:
 - [x] Access v1 node information
 - [x] Change node ConfigurationName server side\
   Thanks to PR [#4](https://github.com/bgelens/DSCPullServerAdmin/pull/4) from [@rdbartram](https://github.com/rdbartram)!
-- [ ] Create new SQL Database
-- [ ] Move / Migrate data from edb to SQL Database
+- [x] Create new SQL Database
+- [x] Move / Migrate data from edb to SQL Database
 
-![InitialCmdletOutput](images/initialcmdletoutput.png)
-
-![InitialCmdletOutput2](images/initialcmdletoutput2.png)
+![InitialCmdletOutput1](images/getregdatasql.gif)
 
 ## SQL Interfacing
 
 Basic interfacing existing SQL DB:
 
 ```powershell
-Connect-DSCPullServerAdminSQLInstance -InstanceName myhost\myinstance -Credential (Get-Credential)
-Set-DSCPullServerAdminSQLDatabase -Name DSC
-Get-DscPullServerAdminSQLRegistration -Name LCMClient
+Set-DefaultDSCPullServerConnection -SQLServer myhost\myinstance -SQLCredential (Get-Credential)
+Get-DSCPullServerAdminRegistration -NodeName LCMClient
 ```
 
-Create new DB and import data from edb:
+Create new DB and import data from ese:
+
+The default is from ESE to SQL and will move registred clients of version 1 and 2
 
 ```powershell
-Connect-DSCPullServerAdminSQLInstance -InstanceName myhost\myinstance -Credential (Get-Credential)
-New-DSCPullServerAdminSQLDatabase -Name DSC02 #new will auto connect
-Mount-DSCPullServerAdminDatabase -ESEPath .\Devices.edb
-Import-DSCPullServerAdminSQLDataFromEDB #default skip if exist, -Force to overwrite
+New-DSCPullServerAdminSQLDatabase -SQLServer myhost\myinstance -SQLCredential (Get-Credential) -DBFolderPath D:\DSCDatabase
+Import-DSCPullServerAdminData -SQLServer myhost\myinstance -SQLCredential (Get-Credential) -Database DSC -ESEFilePath D:\DSCService\devices.edb 
 ```
 
-Connect existing DB and import data from edb:
+Connect existing DB and import data from ese:
 
 ```powershell
-Connect-DSCPullServerAdminSQLInstance -InstanceName myhost\myinstance -Credential (Get-Credential)
-Set-DSCPullServerAdminSQLDatabase -Name DSC
-Mount-DSCPullServerAdminDatabase -ESEPath .\Devices.edb
-Import-DSCPullServerAdminSQLDataFromEDB #default skip if exist, -Force to overwrite
+Set-DefaultDSCPullServerConnection -ESEFilePath D:\DSCService\devices.edb
+Get-DSCPullServerAdminRegistration -NodeName LCMClient
+```
+
+Connect adhoc to SQL or ESE
+
+```powershell
+Get-DSCPullServerAdminRegistration -NodeName LCMClient1 -SQLServer myhost\myinstance
+Get-DSCPullServerAdminRegistration -NodeName LCMClient2 -ESEFilePath D:\DSCService\devices.edb
 ```

@@ -1,5 +1,7 @@
 #Import-Module $PSScriptRoot\DSCPullServerAdmin.dll -Prefix ESE
 
+Add-Type -Path "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\microsoft.isam.esent.interop\*\Microsoft.Isam.Esent.Interop.dll"
+
 $DSCPullServerConnections = [System.Collections.ArrayList]::new()
 
 #region classes
@@ -22,6 +24,8 @@ class DSCDevice {
 
     [int32] $StatusCode
 
+    DSCDevice () {}
+
     DSCDevice ([System.Data.Common.DbDataRecord] $Input) {
         for ($i = 0; $i -lt $Input.FieldCount; $i++) {
             $name = $Input.GetName($i)
@@ -41,6 +45,8 @@ class DSCNodeRegistration {
     [IPAddress[]] $IPAddress
 
     [string[]] $ConfigurationNames
+
+    DSCNodeRegistration () {}
 
     DSCNodeRegistration ([System.Data.Common.DbDataRecord] $Input) {
         for ($i = 0; $i -lt $Input.FieldCount; $i++) {
@@ -87,6 +93,8 @@ class DSCNodeStatusReport {
 
     [datetime] $EndTime
 
+    [datetime] $LastModifiedTime
+
     [PSObject[]] $Errors
 
     [PSObject[]] $StatusData
@@ -94,6 +102,8 @@ class DSCNodeStatusReport {
     [bool] $RebootRequested
 
     [PSObject[]] $AdditionalData
+
+    DSCNodeStatusReport () {}
 
     DSCNodeStatusReport ([System.Data.Common.DbDataRecord] $Input) {
         for ($i = 0; $i -lt $Input.FieldCount; $i++) {
@@ -191,12 +201,14 @@ class DSCPullServerSQLConnection : DSCPullServerConnection {
 
 class DSCPullServerESEConnection : DSCPullServerConnection {
     [string] $ESEFilePath
+    hidden [object] $Instance
+    hidden [object] $SessionId
+    hidden [object] $DbId
 
-    DSCPullServerESEConnection () : Base ([DSCPullServerConnectionType]::ESE) {
-    }
+    DSCPullServerESEConnection () : base([DSCPullServerConnectionType]::ESE) { }
 
     DSCPullServerESEConnection ([string]$Path) : base([DSCPullServerConnectionType]::ESE) {
-        $this.ESEFilePath = $Path
+        $this.ESEFilePath = (Resolve-Path $Path).ProviderPath
     }
 }
 #endregion
@@ -239,17 +251,16 @@ function Get-DSCPullServerAdminDevice {
     process {
         switch ($Connection.Type) {
             ESE {
-                $eseParams = @{}
-                if ($PSBoundParameters.ContainsKey('TargetName')) {
-                    $eseParams.Add('TargetName', $TargetName)
-                }
-                Get-ESEDSCPullServerAdminRegistration @eseParams
+                #$eseParams = @{}
+                #if ($PSBoundParameters.ContainsKey('TargetName')) {
+                #    $eseParams.Add('TargetName', $TargetName)
+                #}
             }
             SQL {
                 $tsqlScript = 'SELECT * FROM Devices'
                 $filters = [System.Collections.ArrayList]::new()
                 if ($PSBoundParameters.ContainsKey("TargetName")) {
-                    [void] $filters.Add(("TargetName like '{0}'" -f $TargetName.Replace('*','%')))
+                    [void] $filters.Add(("TargetName like '{0}'" -f $TargetName.Replace('*', '%')))
                 }
 
                 if ($filters.Count -ge 1) {
@@ -260,11 +271,6 @@ function Get-DSCPullServerAdminDevice {
                     [DSCDevice]::New($_)
                 }
             }
-        }
-    }
-    end {
-        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
-            Dismount-ESEDSCPullServerAdminDatabase
         }
     }
 }
@@ -311,14 +317,17 @@ function Get-DSCPullServerAdminRegistration {
     process {
         switch ($Connection.Type) {
             ESE {
-                $eseParams = @{}
+                $eseParams = @{
+                    Connection = $Connection
+                }
                 if ($PSBoundParameters.ContainsKey('AgentId')) {
                     $eseParams.Add('AgentId', $AgentId)
                 }
                 if ($PSBoundParameters.ContainsKey("NodeName")) {
                     $eseParams.Add('NodeName', $NodeName)
                 }
-                Get-ESEDSCPullServerAdminRegistration @eseParams
+
+                Get-DSCPullServerESERegistration @eseParams
             }
             SQL {
                 $tsqlScript = 'SELECT * FROM RegistrationData'
@@ -327,7 +336,7 @@ function Get-DSCPullServerAdminRegistration {
                     [void] $filters.Add(("AgentId = '{0}'" -f $AgentId))
                 }
                 if ($PSBoundParameters.ContainsKey("NodeName")) {
-                    [void] $filters.Add(("NodeName like '{0}'" -f $NodeName.Replace('*','%')))
+                    [void] $filters.Add(("NodeName like '{0}'" -f $NodeName.Replace('*', '%')))
                 }
 
                 if ($filters.Count -ge 1) {
@@ -340,19 +349,13 @@ function Get-DSCPullServerAdminRegistration {
             }
         }
     }
-    end {
-        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
-            Dismount-ESEDSCPullServerAdminDatabase
-        }
-    }
 }
 
 function Get-DSCPullServerAdminStatusReport {
     [CmdletBinding(DefaultParameterSetName = 'Connection')]
     param (
         [Parameter(ValueFromPipelineByPropertyName)]
-        [guid]
-        $AgentId,
+        [guid] $AgentId,
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
@@ -360,12 +363,10 @@ function Get-DSCPullServerAdminStatusReport {
         [string] $NodeName,
 
         [Parameter()]
-        [datetime]
-        $FromStartTime,
+        [datetime] $FromStartTime,
 
         [Parameter()]
-        [datetime]
-        $ToStartTime,
+        [datetime] $ToStartTime,
 
         [Parameter(ParameterSetName = 'Connection')]
         [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
@@ -397,16 +398,24 @@ function Get-DSCPullServerAdminStatusReport {
     }
     process {
         switch ($Connection.Type) {
-
             ESE {
-                $Params = @{}
-                if ($PSBoundParameters.ContainsKey("FromStartTime")) {
-                    $Params.Add("FromStartTime", $FromStartTime)
+                $eseParams = @{
+                    Connection = $Connection
+                }
+                #if ($PSBoundParameters.ContainsKey('AgentId')) { # does not exist in 2012R2 edb??
+                #    $eseParams.Add('AgentId', $AgentId)
+                #}
+                if ($PSBoundParameters.ContainsKey('NodeName')) {
+                    $eseParams.Add('NodeName', $NodeName)
+                }
+                if ($PSBoundParameters.ContainsKey('FromStartTime')) {
+                    $Params.Add('FromStartTime', $FromStartTime)
                 }
                 if ($PSBoundParameters.ContainsKey("ToStartTime")) {
-                    $Params.Add("ToStartTime", $ToStartTime)
+                    $Params.Add('ToStartTime', $ToStartTime)
                 }
-                Get-ESEDSCPullServerAdminReport -NodeName $NodeName @Params
+
+                Get-DSCPullServerESEStatusReport @eseParams
             }
             SQL {
                 $tsqlScript = "SELECT * FROM StatusReport"
@@ -415,7 +424,7 @@ function Get-DSCPullServerAdminStatusReport {
                     [void] $filters.Add(("AgentId = '{0}'" -f $AgentId))
                 }
                 if ($PSBoundParameters.ContainsKey("NodeName")) {
-                    [void] $filters.Add(("NodeName like '{0}'" -f $NodeName.Replace('*','%')))
+                    [void] $filters.Add(("NodeName like '{0}'" -f $NodeName.Replace('*', '%')))
                 }
                 if ($PSBoundParameters.ContainsKey("FromStartTime")) {
                     [void] $filters.Add(("StartTime >= '{0}'" -f (Get-Date $FromStartTime -f s)))
@@ -433,11 +442,6 @@ function Get-DSCPullServerAdminStatusReport {
                     [DSCNodeStatusReport]::New($_)
                 }
             }
-        }
-    }
-    end {
-        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
-            Dismount-ESEDSCPullServerAdminDatabase
         }
     }
 }
@@ -1327,6 +1331,11 @@ function New-DSCPullServerAdminConnection {
         [switch] $DontStore
     )
 
+    $currentConnections = Get-DSCPullServerAdminConnection
+    $lastIndex = $currentConnections |
+        Sort-Object -Property Index -Descending |
+        Select-Object -First 1 -ExpandProperty Index
+
     if ($PSCmdlet.ParameterSetName -eq 'SQL') {
         if ($PSBoundParameters.ContainsKey('Credential') -and $PSBoundParameters.ContainsKey('Database')) {
             $connection = [DSCPullServerSQLConnection]::New($SQLServer, $Credential, $Database)
@@ -1339,25 +1348,19 @@ function New-DSCPullServerAdminConnection {
         }
 
         # TODO: Precheck if connection is actually working or else fail
-
-        $currentConnections = Get-DSCPullServerAdminConnection -Type 'SQL'
-        if ($null -eq $currentConnections) {
-            $connection.Index = 0
-            $connection.Active = $true
-        } else {
-            # TODO: Deal with duplicates
-            $lastIndex = $currentConnections |
-                Sort-Object -Property Index -Descending |
-                    Select-Object -First 1 -ExpandProperty Index
-            $connection.Index = $lastIndex + 1
-            $connection.Active = $false
-        }
     } else {
         # TODO: Handle ESE same as SQL
         $connection = [DSCPullServerESEConnection]::New($ESEFilePath)
     }
 
     if (-not $DontStore) {
+        if ($null -eq $currentConnections) {
+            $connection.Index = 0
+            $connection.Active = $true
+        } else {
+            $connection.Index = $lastIndex + 1
+            $connection.Active = $false
+        }
         [void] $script:DSCPullServerConnections.Add($connection)
     }
     $connection
@@ -1404,7 +1407,9 @@ function Set-DSCPullServerAdminConnectionActive {
         [DSCPullServerConnection] $Connection
     )
     $currentActive = Get-DSCPullServerAdminConnection -OnlyShowActive
-    $currentActive.Active = $false
+    if ($null -ne $currentActive) {
+        $currentActive.Active = $false
+    }
     $Connection.Active = $true
 }
 
@@ -1444,7 +1449,6 @@ function Invoke-DSCPullServerSQLCommand {
         [Parameter(ValueFromRemainingArguments, DontShow)]
         $DroppedParams
     )
-
     begin {
         $sqlConnection = [System.Data.SqlClient.SqlConnection]::new($Connection.ConnectionString())
         try {
@@ -1477,6 +1481,322 @@ function Invoke-DSCPullServerSQLCommand {
     end {
         $sqlConnection.Close()
         $sqlConnection.Dispose()
+    }
+}
+
+function Mount-DSCPullServerESEDatabase {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [DSCPullServerESEConnection] $Connection
+    )
+
+    [Microsoft.Isam.Esent.Interop.JET_INSTANCE] $jetInstance = [Microsoft.Isam.Esent.Interop.JET_INSTANCE]::Nil
+    [Microsoft.Isam.Esent.Interop.JET_SESID] $sessionId = [Microsoft.Isam.Esent.Interop.JET_SESID]::Nil
+    [Microsoft.Isam.Esent.Interop.JET_DBID] $dbId = [Microsoft.Isam.Esent.Interop.JET_DBID]::Nil
+
+    [void] [Microsoft.Isam.Esent.Interop.Api]::JetSetSystemParameter(
+        $jetInstance,
+        [Microsoft.Isam.Esent.Interop.JET_SESID]::Nil,
+        [Microsoft.Isam.Esent.Interop.JET_param]::CircularLog,
+        1,
+        $null
+    )
+
+    [void] [Microsoft.Isam.Esent.Interop.Api]::JetCreateInstance2(
+        [ref]$jetInstance,
+        'instance',
+        'instance',
+        [Microsoft.Isam.Esent.Interop.CreateInstanceGrbit]::None
+    )
+
+    [void] [Microsoft.Isam.Esent.Interop.Api]::JetInit2(
+        [ref]$jetInstance,
+        [Microsoft.Isam.Esent.Interop.InitGrbit]::None
+    )
+
+    [void] [Microsoft.Isam.Esent.Interop.Api]::JetBeginSession(
+        $jetInstance,
+        [ref]$sessionId,
+        $null,
+        $null
+    )
+    try {
+        [void] [Microsoft.Isam.Esent.Interop.Api]::JetAttachDatabase(
+            $sessionId,
+            $Connection.ESEFilePath,
+            [Microsoft.Isam.Esent.Interop.AttachDatabaseGrbit]::None #readonly?
+        )
+        [void] [Microsoft.Isam.Esent.Interop.Api]::JetOpenDatabase(
+            $sessionId,
+            $Connection.ESEFilePath,
+            $null,
+            [ref]$dbId,
+            [Microsoft.Isam.Esent.Interop.OpenDatabaseGrbit]::None #readonly?
+        )
+        $Connection.Instance = $jetInstance
+        $Connection.SessionId = $sessionId
+        $Connection.DbId = $dbId
+    } catch {
+        [void] [Microsoft.Isam.Esent.Interop.Api]::JetEndSession(
+            $sessionId,
+            [Microsoft.Isam.Esent.Interop.EndSessionGrbit]::None
+        )
+        [void] [Microsoft.Isam.Esent.Interop.Api]::JetTerm($jetInstance)
+        throw $_
+    }
+}
+
+function Dismount-DSCPullServerESEDatabase {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [DSCPullServerESEConnection] $Connection
+    )
+
+    [void] [Microsoft.Isam.Esent.Interop.Api]::JetCloseDatabase(
+        $Connection.SessionId,
+        $Connection.DbId,
+        [Microsoft.Isam.Esent.Interop.CloseDatabaseGrbit]::None
+    )
+
+    [void] [Microsoft.Isam.Esent.Interop.Api]::JetDetachDatabase(
+        $Connection.SessionId,
+        $Connection.ESEFilePath
+    )
+
+    [void] [Microsoft.Isam.Esent.Interop.Api]::JetEndSession(
+        $Connection.SessionId,
+        [Microsoft.Isam.Esent.Interop.EndSessionGrbit]::None
+    )
+
+    [void] [Microsoft.Isam.Esent.Interop.Api]::JetTerm(
+        $Connection.Instance
+    )
+
+    $Connection.Instance = $null
+    $Connection.SessionId = $null
+    $Connection.DbId = $null
+}
+
+function Get-DSCPullServerESERegistration {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [DSCPullServerESEConnection] $Connection,
+
+        [Parameter()]
+        [guid] $AgentId,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [Alias('Name')]
+        [string] $NodeName
+    )
+    begin {
+        $table = 'RegistrationData'
+        [Microsoft.Isam.Esent.Interop.JET_TABLEID] $tableId = [Microsoft.Isam.Esent.Interop.JET_TABLEID]::Nil
+        try {
+            Mount-DSCPullServerESEDatabase -Connection $Connection
+            [void] [Microsoft.Isam.Esent.Interop.Api]::JetOpenTable(
+                $Connection.SessionId,
+                $Connection.DbId,
+                $Table,
+                $null,
+                0,
+                [Microsoft.Isam.Esent.Interop.OpenTableGrbit]::None,
+                [ref]$tableId
+            )
+        } catch {
+            Write-Error -ErrorRecord $_ -ErrorAction Stop
+        }
+    }
+    process {
+        try {
+            [Microsoft.Isam.Esent.Interop.Api]::MoveBeforeFirst($Connection.SessionId, $tableId)
+            while ([Microsoft.Isam.Esent.Interop.Api]::TryMoveNext($Connection.SessionId, $tableId)) {
+                $nodeRegistration = [DSCNodeRegistration]::new()
+                [Microsoft.Isam.Esent.Interop.Api]::GetTableColumns($Connection.SessionId, $tableId) | ForEach-Object -Process {
+                    if ($_.Name -eq 'IPAddress') {
+                        $nodeRegistration.IPAddress = ([Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
+                            $Connection.SessionId,
+                            $tableId,
+                            $_.Columnid
+                        ) -split ';' -split ',')
+                    } elseif ($_.Name -eq 'ConfigurationNames') {
+                        $nodeRegistration.ConfigurationNames = [Microsoft.Isam.Esent.Interop.Api]::DeserializeObjectFromColumn(
+                            $Connection.SessionId,
+                            $tableId,
+                            $_.Columnid
+                        )
+                    } else {
+                        $nodeRegistration."$($_.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
+                            $Connection.SessionId,
+                            $tableId,
+                            $_.Columnid
+                        )
+                    }
+                }
+
+                if ($PSBoundParameters.ContainsKey('NodeName') -and $nodeRegistration.NodeName -notlike $NodeName) {
+                    continue
+                }
+
+                if ($PSBoundParameters.ContainsKey('AgentId') -and $nodeRegistration.AgentId -ne $AgentId) {
+                    continue
+                }
+
+                $nodeRegistration
+            }
+        }
+        finally {
+            Dismount-DSCPullServerESEDatabase -Connection $Connection
+        }
+    }
+}
+
+function Get-DSCPullServerESEStatusReport {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [DSCPullServerESEConnection] $Connection,
+
+        #[Parameter()]
+        #[guid] $AgentId,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [Alias('Name')]
+        [string] $NodeName,
+
+        [Parameter()]
+        [datetime] $FromStartTime,
+
+        [Parameter()]
+        [datetime] $ToStartTime
+    )
+    begin {
+        $table = 'StatusReport'
+        [Microsoft.Isam.Esent.Interop.JET_TABLEID] $tableId = [Microsoft.Isam.Esent.Interop.JET_TABLEID]::Nil
+        try {
+            Mount-DSCPullServerESEDatabase -Connection $Connection
+            [void] [Microsoft.Isam.Esent.Interop.Api]::JetOpenTable(
+                $Connection.SessionId,
+                $Connection.DbId,
+                $Table,
+                $null,
+                0,
+                [Microsoft.Isam.Esent.Interop.OpenTableGrbit]::None,
+                [ref]$tableId
+            )
+        } catch {
+            Write-Error -ErrorRecord $_ -ErrorAction Stop
+        }
+    }
+    process {
+        try {
+            [Microsoft.Isam.Esent.Interop.Api]::MoveBeforeFirst($Connection.SessionId, $tableId)
+            while ([Microsoft.Isam.Esent.Interop.Api]::TryMoveNext($Connection.SessionId, $tableId)) {
+                $stringColumns = @(
+                    'NodeName',
+                    'OperationType',
+                    'RefreshMode',
+                    'Status',
+                    'LCMVersion',
+                    'ReportFormatVersion',
+                    'ConfigurationVersion',
+                    'RebootRequested'
+                )
+
+                $guidColumns = @(
+                    'JobId',
+                    'Id'
+                )
+
+                $datetimeColumns = @(
+                    'StartTime',
+                    'EndTime',
+                    'LastModifiedTime'
+                )
+
+                $deserializeColumns = @(
+                    'Errors',
+                    'StatusData'
+                )
+
+                $statusReport = [DSCNodeStatusReport]::new()
+                [Microsoft.Isam.Esent.Interop.Api]::GetTableColumns($Connection.SessionId, $tableId) | ForEach-Object -Process {
+                    if ($_.Name -in $datetimeColumns) {
+                        $statusReport."$($_.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsDateTime(
+                            $Connection.SessionId,
+                            $tableId,
+                            $_.Columnid
+                        )
+                    } elseif ($_.Name -eq 'IPAddress') { 
+                        $statusReport.IPAddress = ([Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
+                            $Connection.SessionId,
+                            $tableId,
+                            $_.Columnid,
+                            [System.Text.Encoding]::Unicode
+                        ) -split ';' -split ',')
+                    } elseif ($_.Name -in $stringColumns) {
+                        $statusReport."$($_.Name)" = ([Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
+                            $Connection.SessionId,
+                            $tableId,
+                            $_.Columnid,
+                            [System.Text.Encoding]::Unicode
+                        ) -split ';' -split ',')
+                    } elseif ($_.Name -in $guidColumns) {
+                        $statusReport."$($_.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsGuid(
+                            $Connection.SessionId,
+                            $tableId,
+                            $_.Columnid
+                        )
+                    } elseif ($_.Name -in $deserializeColumns) {
+                        $statusReport."$($_.Name)" = [Microsoft.Isam.Esent.Interop.Api]::DeserializeObjectFromColumn(
+                            $Connection.SessionId,
+                            $tableId,
+                            $_.Columnid
+                        )
+                    } elseif ($_.Name -eq 'AdditionalData') {
+                        $statusReport."$($_.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
+                            $Connection.SessionId,
+                            $tableId,
+                            $_.Columnid,
+                            [System.Text.Encoding]::Unicode
+                        ) | ConvertFrom-Json
+                    } else {
+                        $statusReport."$($_.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
+                            $Connection.SessionId,
+                            $tableId,
+                            $_.Columnid,
+                            [System.Text.Encoding]::Unicode
+                        )
+                    }
+
+                    #if ($PSBoundParameters.ContainsKey('AgentId') -and $statusReport.AgentId -ne $AgentId) {
+                    #    continue
+                    #}
+
+                    if ($PSBoundParameters.ContainsKey('NodeName') -and $statusReport.NodeName -notlike $NodeName) {
+                        continue
+                    }
+
+                    if ($PSBoundParameters.ContainsKey('FromStartTime') -and $statusReport.FromStartTime -ge $FromStartTime) {
+                        continue
+                    }
+
+                    if ($PSBoundParameters.ContainsKey('ToStartTime') -and $statusReport.AgentId -le $ToStartTime) {
+                        continue
+                    }
+
+                    $statusReport
+                }
+            }
+        }
+        finally {
+            Dismount-DSCPullServerESEDatabase -Connection $Connection
+        }
     }
 }
 
@@ -1536,10 +1856,14 @@ function PreProc {
             New-DSCPullServerAdminConnection @newSQLArgs
         }
         ESE {
-            #Mount-ESEDSCPullServerAdminDatabase -ESEPath $PSBoundParameters.ESEFilePath
+            $newESEArgs = @{
+                ESEFilePath = $ESEFilePath
+                DontStore = $true
+            }
+            New-DSCPullServerAdminConnection @newESEArgs
         }
     }
 }
 #endregion
 
-Export-ModuleMember -Function *-DSCPullServerAdmin*, *-DefaultDSCPullServerConnection
+Export-ModuleMember -Function *-DSCPullServerAdmin*, *-DSCPullServerESEDatabase, Invoke-DSCPullServerESECommand

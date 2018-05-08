@@ -218,7 +218,12 @@ function Get-DSCPullServerAdminDevice {
     [CmdletBinding(DefaultParameterSetName = 'Connection')]
     param (
         [Parameter()]
+        [ValidateNotNullOrEmpty()]
         [String] $TargetName,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [guid] $ConfigurationID,
         
         [Parameter(ParameterSetName = 'Connection')]
         [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
@@ -251,16 +256,26 @@ function Get-DSCPullServerAdminDevice {
     process {
         switch ($Connection.Type) {
             ESE {
-                #$eseParams = @{}
-                #if ($PSBoundParameters.ContainsKey('TargetName')) {
-                #    $eseParams.Add('TargetName', $TargetName)
-                #}
+                $eseParams = @{
+                    Connection = $Connection
+                }
+                if ($PSBoundParameters.ContainsKey('TargetName')) {
+                    $eseParams.Add('TargetName', $TargetName)
+                }
+                if ($PSBoundParameters.ContainsKey('ConfigurationID')) {
+                    $eseParams.Add('ConfigurationID', $ConfigurationID)
+                }
+
+                Get-DSCPullServerESEDevice @eseParams
             }
             SQL {
                 $tsqlScript = 'SELECT * FROM Devices'
                 $filters = [System.Collections.ArrayList]::new()
                 if ($PSBoundParameters.ContainsKey("TargetName")) {
                     [void] $filters.Add(("TargetName like '{0}'" -f $TargetName.Replace('*', '%')))
+                }
+                if ($PSBoundParameters.ContainsKey("ConfigurationID")) {
+                    [void] $filters.Add(("ConfigurationID = '{0}'" -f $ConfigurationID))
                 }
 
                 if ($filters.Count -ge 1) {
@@ -354,10 +369,12 @@ function Get-DSCPullServerAdminRegistration {
 function Get-DSCPullServerAdminStatusReport {
     [CmdletBinding(DefaultParameterSetName = 'Connection')]
     param (
-        [Parameter(ValueFromPipelineByPropertyName)]
+        # Disabled pipeline binding because ese single session issue    
+        [Parameter(<#ValueFromPipelineByPropertyName#>)]
         [guid] $AgentId,
 
-        [Parameter()]
+        # Disabled pipeline binding because ese single session issue
+        [Parameter(<#ValueFromPipelineByPropertyName#>)]
         [ValidateNotNullOrEmpty()]
         [Alias('Name')]
         [string] $NodeName,
@@ -402,9 +419,9 @@ function Get-DSCPullServerAdminStatusReport {
                 $eseParams = @{
                     Connection = $Connection
                 }
-                #if ($PSBoundParameters.ContainsKey('AgentId')) { # does not exist in 2012R2 edb??
-                #    $eseParams.Add('AgentId', $AgentId)
-                #}
+                if ($PSBoundParameters.ContainsKey('AgentId')) {
+                    $eseParams.Add('AgentId', $AgentId)
+                }
                 if ($PSBoundParameters.ContainsKey('NodeName')) {
                     $eseParams.Add('NodeName', $NodeName)
                 }
@@ -421,7 +438,7 @@ function Get-DSCPullServerAdminStatusReport {
                 $tsqlScript = "SELECT * FROM StatusReport"
                 $filters = [System.Collections.ArrayList]::new()
                 if ($PSBoundParameters.ContainsKey('AgentId')) {
-                    [void] $filters.Add(("AgentId = '{0}'" -f $AgentId))
+                    [void] $filters.Add(("Id = '{0}'" -f $AgentId))
                 }
                 if ($PSBoundParameters.ContainsKey("NodeName")) {
                     [void] $filters.Add(("NodeName like '{0}'" -f $NodeName.Replace('*', '%')))
@@ -1488,27 +1505,75 @@ function Mount-DSCPullServerESEDatabase {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [DSCPullServerESEConnection] $Connection
+        [DSCPullServerESEConnection] $Connection,
+
+        [ValidateSet('None', 'ReadOnly', 'Exclusive')]
+        [string] $Mode = 'None'
     )
+
+    $instanceName = [guid]::NewGuid().guid
+    $systemPath = (Split-Path -Path $Connection.ESEFilePath) + '\'
 
     [Microsoft.Isam.Esent.Interop.JET_INSTANCE] $jetInstance = [Microsoft.Isam.Esent.Interop.JET_INSTANCE]::Nil
     [Microsoft.Isam.Esent.Interop.JET_SESID] $sessionId = [Microsoft.Isam.Esent.Interop.JET_SESID]::Nil
     [Microsoft.Isam.Esent.Interop.JET_DBID] $dbId = [Microsoft.Isam.Esent.Interop.JET_DBID]::Nil
 
+    #parameter options:
+    #https://msdn.microsoft.com/en-us/library/microsoft.isam.esent.interop.jet_param(v=exchg.10).aspx
+
+    'NoInformationEvent', 'CircularLog' | ForEach-Object -Process {
+        [void] [Microsoft.Isam.Esent.Interop.Api]::JetSetSystemParameter(
+            $jetInstance,
+            [Microsoft.Isam.Esent.Interop.JET_SESID]::Nil,
+            [Microsoft.Isam.Esent.Interop.JET_param]$_,
+            1,
+            $null
+        )
+    }
+
     [void] [Microsoft.Isam.Esent.Interop.Api]::JetSetSystemParameter(
         $jetInstance,
         [Microsoft.Isam.Esent.Interop.JET_SESID]::Nil,
-        [Microsoft.Isam.Esent.Interop.JET_param]::CircularLog,
-        1,
+        [Microsoft.Isam.Esent.Interop.JET_param]::LogFileSize,
+        128,
         $null
     )
 
+    [void] [Microsoft.Isam.Esent.Interop.Api]::JetSetSystemParameter(
+        $jetInstance,
+        [Microsoft.Isam.Esent.Interop.JET_SESID]::Nil,
+        [Microsoft.Isam.Esent.Interop.JET_param]::CheckpointDepthMax,
+        524288,
+        $null
+    )
+
+    'PreferredVerPages', 'MaxVerPages' | ForEach-Object -Process {
+        [void] [Microsoft.Isam.Esent.Interop.Api]::JetSetSystemParameter(
+            $jetInstance,
+            [Microsoft.Isam.Esent.Interop.JET_SESID]::Nil,
+            [Microsoft.Isam.Esent.Interop.JET_param]$_,
+            1024,
+            $null
+        )
+    }
+
+    'SystemPath', 'TempPath', 'LogFilePath' | ForEach-Object -Process {
+        [void] [Microsoft.Isam.Esent.Interop.Api]::JetSetSystemParameter(
+            $jetInstance,
+            [Microsoft.Isam.Esent.Interop.JET_SESID]::Nil,
+            [Microsoft.Isam.Esent.Interop.JET_param]$_,
+            $null,
+            $systemPath
+        )
+    }
+
     [void] [Microsoft.Isam.Esent.Interop.Api]::JetCreateInstance2(
         [ref]$jetInstance,
-        'instance',
-        'instance',
+        $instanceName,
+        $instanceName,
         [Microsoft.Isam.Esent.Interop.CreateInstanceGrbit]::None
     )
+    
 
     [void] [Microsoft.Isam.Esent.Interop.Api]::JetInit2(
         [ref]$jetInstance,
@@ -1525,14 +1590,14 @@ function Mount-DSCPullServerESEDatabase {
         [void] [Microsoft.Isam.Esent.Interop.Api]::JetAttachDatabase(
             $sessionId,
             $Connection.ESEFilePath,
-            [Microsoft.Isam.Esent.Interop.AttachDatabaseGrbit]::None #readonly?
+            [Microsoft.Isam.Esent.Interop.AttachDatabaseGrbit]$Mode
         )
         [void] [Microsoft.Isam.Esent.Interop.Api]::JetOpenDatabase(
             $sessionId,
             $Connection.ESEFilePath,
             $null,
             [ref]$dbId,
-            [Microsoft.Isam.Esent.Interop.OpenDatabaseGrbit]::None #readonly?
+            [Microsoft.Isam.Esent.Interop.OpenDatabaseGrbit]$Mode
         )
         $Connection.Instance = $jetInstance
         $Connection.SessionId = $sessionId
@@ -1593,65 +1658,62 @@ function Get-DSCPullServerESERegistration {
         [Alias('Name')]
         [string] $NodeName
     )
-    begin {
-        $table = 'RegistrationData'
-        [Microsoft.Isam.Esent.Interop.JET_TABLEID] $tableId = [Microsoft.Isam.Esent.Interop.JET_TABLEID]::Nil
-        try {
-            Mount-DSCPullServerESEDatabase -Connection $Connection
-            [void] [Microsoft.Isam.Esent.Interop.Api]::JetOpenTable(
-                $Connection.SessionId,
-                $Connection.DbId,
-                $Table,
-                $null,
-                0,
-                [Microsoft.Isam.Esent.Interop.OpenTableGrbit]::None,
-                [ref]$tableId
-            )
-        } catch {
-            Write-Error -ErrorRecord $_ -ErrorAction Stop
+    $table = 'RegistrationData'
+    [Microsoft.Isam.Esent.Interop.JET_TABLEID] $tableId = [Microsoft.Isam.Esent.Interop.JET_TABLEID]::Nil
+    try {
+        Mount-DSCPullServerESEDatabase -Connection $Connection -Mode ReadOnly
+        [void] [Microsoft.Isam.Esent.Interop.Api]::JetOpenTable(
+            $Connection.SessionId,
+            $Connection.DbId,
+            $Table,
+            $null,
+            0,
+            [Microsoft.Isam.Esent.Interop.OpenTableGrbit]::None,
+            [ref]$tableId
+        )
+    } catch {
+        Write-Error -ErrorRecord $_ -ErrorAction Stop
+    }
+
+    try {
+        [Microsoft.Isam.Esent.Interop.Api]::MoveBeforeFirst($Connection.SessionId, $tableId)
+        while ([Microsoft.Isam.Esent.Interop.Api]::TryMoveNext($Connection.SessionId, $tableId)) {
+            $nodeRegistration = [DSCNodeRegistration]::new()
+            foreach ($column in ([Microsoft.Isam.Esent.Interop.Api]::GetTableColumns($Connection.SessionId, $tableId))) {
+                if ($column.Name -eq 'IPAddress') {
+                    $nodeRegistration.IPAddress = ([Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
+                        $Connection.SessionId,
+                        $tableId,
+                        $column.Columnid
+                    ) -split ';' -split ',')
+                } elseif ($column.Name -eq 'ConfigurationNames') {
+                    $nodeRegistration.ConfigurationNames = [Microsoft.Isam.Esent.Interop.Api]::DeserializeObjectFromColumn(
+                        $Connection.SessionId,
+                        $tableId,
+                        $column.Columnid
+                    )
+                } else {
+                    $nodeRegistration."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
+                        $Connection.SessionId,
+                        $tableId,
+                        $column.Columnid
+                    )
+                }
+            }
+
+            if ($PSBoundParameters.ContainsKey('NodeName') -and $nodeRegistration.NodeName -notlike $NodeName) {
+                continue
+            }
+
+            if ($PSBoundParameters.ContainsKey('AgentId') -and $nodeRegistration.AgentId -ne $AgentId) {
+                continue
+            }
+
+            $nodeRegistration
         }
     }
-    process {
-        try {
-            [Microsoft.Isam.Esent.Interop.Api]::MoveBeforeFirst($Connection.SessionId, $tableId)
-            while ([Microsoft.Isam.Esent.Interop.Api]::TryMoveNext($Connection.SessionId, $tableId)) {
-                $nodeRegistration = [DSCNodeRegistration]::new()
-                [Microsoft.Isam.Esent.Interop.Api]::GetTableColumns($Connection.SessionId, $tableId) | ForEach-Object -Process {
-                    if ($_.Name -eq 'IPAddress') {
-                        $nodeRegistration.IPAddress = ([Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
-                            $Connection.SessionId,
-                            $tableId,
-                            $_.Columnid
-                        ) -split ';' -split ',')
-                    } elseif ($_.Name -eq 'ConfigurationNames') {
-                        $nodeRegistration.ConfigurationNames = [Microsoft.Isam.Esent.Interop.Api]::DeserializeObjectFromColumn(
-                            $Connection.SessionId,
-                            $tableId,
-                            $_.Columnid
-                        )
-                    } else {
-                        $nodeRegistration."$($_.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
-                            $Connection.SessionId,
-                            $tableId,
-                            $_.Columnid
-                        )
-                    }
-                }
-
-                if ($PSBoundParameters.ContainsKey('NodeName') -and $nodeRegistration.NodeName -notlike $NodeName) {
-                    continue
-                }
-
-                if ($PSBoundParameters.ContainsKey('AgentId') -and $nodeRegistration.AgentId -ne $AgentId) {
-                    continue
-                }
-
-                $nodeRegistration
-            }
-        }
-        finally {
-            Dismount-DSCPullServerESEDatabase -Connection $Connection
-        }
+    finally {
+        Dismount-DSCPullServerESEDatabase -Connection $Connection
     }
 }
 
@@ -1661,8 +1723,9 @@ function Get-DSCPullServerESEStatusReport {
         [Parameter(Mandatory)]
         [DSCPullServerESEConnection] $Connection,
 
-        #[Parameter()]
-        #[guid] $AgentId,
+        [Parameter()]
+        [Alias('Id')]
+        [guid] $AgentId,
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
@@ -1675,128 +1738,246 @@ function Get-DSCPullServerESEStatusReport {
         [Parameter()]
         [datetime] $ToStartTime
     )
-    begin {
-        $table = 'StatusReport'
-        [Microsoft.Isam.Esent.Interop.JET_TABLEID] $tableId = [Microsoft.Isam.Esent.Interop.JET_TABLEID]::Nil
-        try {
-            Mount-DSCPullServerESEDatabase -Connection $Connection
-            [void] [Microsoft.Isam.Esent.Interop.Api]::JetOpenTable(
-                $Connection.SessionId,
-                $Connection.DbId,
-                $Table,
-                $null,
-                0,
-                [Microsoft.Isam.Esent.Interop.OpenTableGrbit]::None,
-                [ref]$tableId
-            )
-        } catch {
-            Write-Error -ErrorRecord $_ -ErrorAction Stop
-        }
+    $table = 'StatusReport'
+    [Microsoft.Isam.Esent.Interop.JET_TABLEID] $tableId = [Microsoft.Isam.Esent.Interop.JET_TABLEID]::Nil
+    try {
+        Mount-DSCPullServerESEDatabase -Connection $Connection -Mode ReadOnly
+        [void] [Microsoft.Isam.Esent.Interop.Api]::JetOpenTable(
+            $Connection.SessionId,
+            $Connection.DbId,
+            $Table,
+            $null,
+            0,
+            [Microsoft.Isam.Esent.Interop.OpenTableGrbit]::None,
+            [ref]$tableId
+        )
+    } catch {
+        Write-Error -ErrorRecord $_ -ErrorAction Stop
     }
-    process {
-        try {
-            [Microsoft.Isam.Esent.Interop.Api]::MoveBeforeFirst($Connection.SessionId, $tableId)
-            while ([Microsoft.Isam.Esent.Interop.Api]::TryMoveNext($Connection.SessionId, $tableId)) {
-                $stringColumns = @(
-                    'NodeName',
-                    'OperationType',
-                    'RefreshMode',
-                    'Status',
-                    'LCMVersion',
-                    'ReportFormatVersion',
-                    'ConfigurationVersion',
-                    'RebootRequested'
-                )
 
-                $guidColumns = @(
-                    'JobId',
-                    'Id'
-                )
+    try {
+        [Microsoft.Isam.Esent.Interop.Api]::MoveBeforeFirst($Connection.SessionId, $tableId)
 
-                $datetimeColumns = @(
-                    'StartTime',
-                    'EndTime',
-                    'LastModifiedTime'
-                )
+        $stringColumns = @(
+            'NodeName',
+            'OperationType',
+            'RefreshMode',
+            'Status',
+            'LCMVersion',
+            'ReportFormatVersion',
+            'ConfigurationVersion',
+            'RebootRequested'
+        )
 
-                $deserializeColumns = @(
-                    'Errors',
-                    'StatusData'
-                )
+        $guidColumns = @(
+            'JobId',
+            'Id'
+        )
 
-                $statusReport = [DSCNodeStatusReport]::new()
-                [Microsoft.Isam.Esent.Interop.Api]::GetTableColumns($Connection.SessionId, $tableId) | ForEach-Object -Process {
-                    if ($_.Name -in $datetimeColumns) {
-                        $statusReport."$($_.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsDateTime(
-                            $Connection.SessionId,
-                            $tableId,
-                            $_.Columnid
-                        )
-                    } elseif ($_.Name -eq 'IPAddress') { 
-                        $statusReport.IPAddress = ([Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
-                            $Connection.SessionId,
-                            $tableId,
-                            $_.Columnid,
-                            [System.Text.Encoding]::Unicode
-                        ) -split ';' -split ',')
-                    } elseif ($_.Name -in $stringColumns) {
-                        $statusReport."$($_.Name)" = ([Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
-                            $Connection.SessionId,
-                            $tableId,
-                            $_.Columnid,
-                            [System.Text.Encoding]::Unicode
-                        ) -split ';' -split ',')
-                    } elseif ($_.Name -in $guidColumns) {
-                        $statusReport."$($_.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsGuid(
-                            $Connection.SessionId,
-                            $tableId,
-                            $_.Columnid
-                        )
-                    } elseif ($_.Name -in $deserializeColumns) {
-                        $statusReport."$($_.Name)" = [Microsoft.Isam.Esent.Interop.Api]::DeserializeObjectFromColumn(
-                            $Connection.SessionId,
-                            $tableId,
-                            $_.Columnid
-                        )
-                    } elseif ($_.Name -eq 'AdditionalData') {
-                        $statusReport."$($_.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
-                            $Connection.SessionId,
-                            $tableId,
-                            $_.Columnid,
-                            [System.Text.Encoding]::Unicode
-                        ) | ConvertFrom-Json
-                    } else {
-                        $statusReport."$($_.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
-                            $Connection.SessionId,
-                            $tableId,
-                            $_.Columnid,
-                            [System.Text.Encoding]::Unicode
-                        )
+        $datetimeColumns = @(
+            'StartTime',
+            'EndTime',
+            'LastModifiedTime'
+        )
+
+        $deserializeColumns = @(
+            'Errors',
+            'StatusData'
+        )
+
+        while ([Microsoft.Isam.Esent.Interop.Api]::TryMoveNext($Connection.SessionId, $tableId)) {
+            $statusReport = [DSCNodeStatusReport]::new()
+            foreach ($column in ([Microsoft.Isam.Esent.Interop.Api]::GetTableColumns($Connection.SessionId, $tableId))) {
+                if ($column.Name -in $datetimeColumns) {
+                    $statusReport."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsDateTime(
+                        $Connection.SessionId,
+                        $tableId,
+                        $column.Columnid
+                    )
+                } elseif ($column.Name -eq 'IPAddress') { 
+                    $ipAddress = ([Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
+                        $Connection.SessionId,
+                        $tableId,
+                        $column.Columnid,
+                        [System.Text.Encoding]::Unicode
+                    ) -split ';' -split ',')
+                    $statusReport.IPAddress = $ipAddress.ForEach{
+                        # potential for invalid ip address like empty string
+                        try {
+                            [void][ipaddress]::Parse($_)
+                            $_
+                        } catch {}
                     }
-
-                    #if ($PSBoundParameters.ContainsKey('AgentId') -and $statusReport.AgentId -ne $AgentId) {
-                    #    continue
-                    #}
-
-                    if ($PSBoundParameters.ContainsKey('NodeName') -and $statusReport.NodeName -notlike $NodeName) {
-                        continue
-                    }
-
-                    if ($PSBoundParameters.ContainsKey('FromStartTime') -and $statusReport.FromStartTime -ge $FromStartTime) {
-                        continue
-                    }
-
-                    if ($PSBoundParameters.ContainsKey('ToStartTime') -and $statusReport.AgentId -le $ToStartTime) {
-                        continue
-                    }
-
-                    $statusReport
+                } elseif ($column.Name -in $stringColumns) {
+                    $statusReport."$($column.Name)" = ([Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
+                        $Connection.SessionId,
+                        $tableId,
+                        $column.Columnid,
+                        [System.Text.Encoding]::Unicode
+                    ) -split ';' -split ',')
+                } elseif ($column.Name -in $guidColumns) {
+                    $statusReport."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsGuid(
+                        $Connection.SessionId,
+                        $tableId,
+                        $column.Columnid
+                    )
+                } elseif ($column.Name -in $deserializeColumns) {
+                    $statusReport."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::DeserializeObjectFromColumn(
+                        $Connection.SessionId,
+                        $tableId,
+                        $column.Columnid
+                    )
+                } elseif ($column.Name -eq 'AdditionalData') {
+                    $statusReport."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
+                        $Connection.SessionId,
+                        $tableId,
+                        $column.Columnid,
+                        [System.Text.Encoding]::Unicode
+                    ) | ConvertFrom-Json
+                } else {
+                    $statusReport."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
+                        $Connection.SessionId,
+                        $tableId,
+                        $column.Columnid,
+                        [System.Text.Encoding]::Unicode
+                    )
                 }
+
+                if ($PSBoundParameters.ContainsKey('AgentId') -and $statusReport.Id -ne $AgentId) {
+                    continue
+                }
+
+                if ($PSBoundParameters.ContainsKey('NodeName') -and $statusReport.NodeName -notlike $NodeName) {
+                    continue
+                }
+
+                if ($PSBoundParameters.ContainsKey('FromStartTime') -and $statusReport.FromStartTime -ge $FromStartTime) {
+                    continue
+                }
+
+                if ($PSBoundParameters.ContainsKey('ToStartTime') -and $statusReport.AgentId -le $ToStartTime) {
+                    continue
+                }
+
+                $statusReport
             }
         }
-        finally {
-            Dismount-DSCPullServerESEDatabase -Connection $Connection
+    }
+    finally {
+        Dismount-DSCPullServerESEDatabase -Connection $Connection
+    }
+}
+
+function Get-DSCPullServerESEDevice {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [DSCPullServerESEConnection] $Connection,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [Alias('Name')]
+        [string] $TargetName,
+
+        [Parameter()]
+        [guid] $ConfigurationID
+    )
+    $table = 'Devices'
+    [Microsoft.Isam.Esent.Interop.JET_TABLEID] $tableId = [Microsoft.Isam.Esent.Interop.JET_TABLEID]::Nil
+    try {
+        Mount-DSCPullServerESEDatabase -Connection $Connection -Mode ReadOnly
+        [void] [Microsoft.Isam.Esent.Interop.Api]::JetOpenTable(
+            $Connection.SessionId,
+            $Connection.DbId,
+            $Table,
+            $null,
+            0,
+            [Microsoft.Isam.Esent.Interop.OpenTableGrbit]::None,
+            [ref]$tableId
+        )
+    } catch {
+        Write-Error -ErrorRecord $_ -ErrorAction Stop
+    }
+
+    try {
+        [Microsoft.Isam.Esent.Interop.Api]::MoveBeforeFirst($Connection.SessionId, $tableId)
+
+        $stringColumns = @(
+            'TargetName',
+            'ConfigurationID',
+            'ServerCheckSum',
+            'TargetChecksum'
+        )
+
+        $boolColumns = @(
+            'NodeCompliant',
+            'Dirty'
+        )
+
+        $datetimeColumns = @(
+            'LastComplianceTime',
+            'LastHeartbeatTime'
+        )
+
+        while ([Microsoft.Isam.Esent.Interop.Api]::TryMoveNext($Connection.SessionId, $tableId)) {
+            foreach ($column in ([Microsoft.Isam.Esent.Interop.Api]::GetTableColumns($Connection.SessionId, $tableId))) {
+                $device = [DSCDevice]::new()
+                if ($column.Name -in $stringColumns) {
+                    $device."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
+                        $Connection.SessionId,
+                        $tableId,
+                        $column.Columnid,
+                        [System.Text.Encoding]::Unicode
+                    )
+                } elseif ($column.Name -in $boolColumns) {
+                    $row = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsBoolean(
+                        $Connection.SessionId,
+                        $tableId,
+                        $column.Columnid
+                    )
+                    if ($row.HasValue) {
+                        $device."$($column.Name)" = $row.Value
+                    }
+                } elseif ($column.Name -in $datetimeColumns) {
+                    $row = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsDateTime(
+                        $Connection.SessionId,
+                        $tableId,
+                        $column.Columnid
+                    )
+                    if ($row.HasValue) {
+                        $device."$($column.Name)" = $row.Value
+                    }
+                } elseif ($column.Name -eq 'StatusCode') {
+                    $row = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsInt32(
+                        $Connection.SessionId,
+                        $tableId,
+                        $column.Columnid
+                    )
+                    if ($row.HasValue) {
+                        $device.StatusCode = $row.Value
+                    }
+                } else {
+                    $device."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
+                        $Connection.SessionId,
+                        $tableId,
+                        $column.Columnid,
+                        [System.Text.Encoding]::Unicode
+                    )
+                }
+            }
+
+            if ($PSBoundParameters.ContainsKey('TargetName') -and $device.TargetName -notlike $TargetName) {
+                continue
+            }
+            if ($PSBoundParameters.ContainsKey('ConfigurationID') -and $device.ConfigurationID -notlike $ConfigurationID) {
+                continue
+            }
+
+            $device
         }
+    }
+    finally {
+        Dismount-DSCPullServerESEDatabase -Connection $Connection
     }
 }
 

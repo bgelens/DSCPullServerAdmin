@@ -98,6 +98,10 @@ class DSCNodeRegistration {
         ))
         return $query
     }
+
+    [string] GetSQLDelete () {
+        return ("DELETE FROM RegistrationData WHERE AgentId = '{0}'" -f $this.AgentId)
+    }
 }
 
 class DSCNodeStatusReport {
@@ -921,82 +925,52 @@ function Set-DSCPullServerAdminStatusReport {
 #endregion
 
 #region table Remove functions
-<#
 function Remove-DSCPullServerAdminRegistration {
-    [CmdletBinding(DefaultParameterSetName = "DefaultConnection")]
+    [CmdletBinding(
+        DefaultParameterSetName = 'Connection',
+        ConfirmImpact = 'High',
+        SupportsShouldProcess
+    )]
     param (
-        [Parameter(ParameterSetName = "DefaultConnection", DontShow)]
-        [DSCPullServerConnection]
-        $Connection = $script:DefaultDSCPullServerConnection,
-
-        [Parameter(Mandatory, ParameterSetName = "ESE")]
-        [string]
-        $ESEFilePath,
-
-        [Parameter(Mandatory, ParameterSetName = "SQL")]
-        [string]
-        $SQLServer,
-
-        [Parameter(ParameterSetName = "SQL")]
-        [pscredential]
-        $SQLCredential,
-
-        [Parameter(ParameterSetName = "SQL")]
-        [string]
-        $Database,
-
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
-        [guid]
-        $AgentId
+        [guid] $AgentId,
+
+        [Parameter(ParameterSetName = 'Connection')]
+        [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
+
+        [Parameter(Mandatory, ParameterSetName = 'SQL')]
+        [ValidateNotNullOrEmpty()]
+        [Alias('SQLInstance')]
+        [string] $SQLServer,
+
+        [Parameter(ParameterSetName = 'SQL')]
+        [pscredential] $Credential,
+
+        [Parameter(ParameterSetName = 'SQL')]
+        [string] $Database
     )
 
     begin {
-        if ($PSCmdlet.ParameterSetName -eq 'DefaultConnection' -and
-            $false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
+        if ($null -ne $Connection -and -not $PSBoundParameters.ContainsKey('Connection')) {
+            [void] $PSBoundParameters.Add('Connection', $Connection)
+        }
+        $Connection = PreProc -ParameterSetName $PSCmdlet.ParameterSetName @PSBoundParameters
+        if ($null -eq $Connection) {
             break
-        } elseif ($PSCmdlet.ParameterSetName -eq 'DefaultConnection') {
-            if ($Connection -is [DSCPullServerESEConnection]) {
-                $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
-            }
-
-            if ($Connection -is [DSCPullServerSQLConnection]) {
-                $PSBoundParameters["SQLServer"] = $Connection.SQLServer
-                if ($null -ne $Connection.Credential) {
-                    $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
-                }
-            }
-        } else {
-            $Connection = [DSCPullServerConnection]::New($PSCmdlet.ParameterSetName)
-        }
-
-        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
-            Mount-ESEDSCPullServerAdminDatabase -ESEPath $PSBoundParameters["ESEFilePath"]
         }
     }
-
-    end {
-        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
-            Dismount-ESEDSCPullServerAdminDatabase
-        }
-    }
-
     process {
-        switch ($Connection.Type) {
-
-            ([DSCPullServerConnectionType]::ESE).ToString() {
-                Remove-ESEDSCPullServerAdminRegistration -AgentId $AgentId
-            }
-
-            ([DSCPullServerConnectionType]::SQL).ToString() {
-                $Command = "DELETE FROM RegistrationData WHERE AgentId = '$AgentId'"
-
-                $Output = Invoke-DSCPullServerSQLCommand @PSBoundParameters -CommandType Set -Script $Command
-                Write-Verbose "Agents Deleted: $Output"
+        $existingRegistration = Get-DSCPullServerAdminRegistration -Connection $Connection -AgentId $AgentId
+        if ($null -eq $existingRegistration) {
+            Write-Warning -Message "A NodeRegistration with AgentId '$AgentId' was not found"
+        } else {
+            $tsqlScript = $existingRegistration.GetSQLDelete()
+            if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+                Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
             }
         }
     }
 }
-#>
 
 <#
 function Remove-DSCPullServerAdminDevice {

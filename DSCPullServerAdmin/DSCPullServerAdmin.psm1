@@ -6,6 +6,12 @@ $DSCPullServerConnections = [System.Collections.ArrayList]::new()
 # Unlock NEW, SET, REMOVE for ESE database (Now only for SQL)
 # Add pipeline support for ESE (have some sort of session manager that closes the db connection only when entire pipeline is complete)
 # Currently I'm unable to populate Devices table though SQL enabled Pull Server using WMF5.1 or WMF4 LCM.
+# Add InputObject to functions instead of ValueFromPipelineByPropertyName to handle pipeline processing
+# * Based on InputObject, skip lookup for Set / Remove
+# * Based on Parameter, keep lookup for Set / Remove
+# Have new connections also validate that they can actually do something with the connection or else fail
+# Abstract connections into higher level management class?
+# Finish New, Set, Remove for SQL StatusReport functions
 
 $deviceStatusCodeMap = @{
     0 = 'Configuration was applied successfully'
@@ -232,7 +238,7 @@ class DSCNodeStatusReport {
 
     [datetime] $EndTime
 
-    [datetime] $LastModifiedTime
+    [datetime] $LastModifiedTime # Only applicable for ESENT, Not present in SQL
 
     [PSObject[]] $Errors
 
@@ -266,6 +272,68 @@ class DSCNodeStatusReport {
                 $this."$name" = $data
             }
         }
+    }
+
+    [string] GetSQLUpdate () {
+        $query = "UPDATE StatusReport Set {0} WHERE JobId = '{1}'" -f @(
+            (($this | Get-Member -MemberType Property).Where{
+                $_.Name -ne 'JobId'
+            }.foreach{
+                if ($_.Name -eq 'LastModifiedTime') {
+                    # skip as missing in SQL table, only present in EDB
+                } elseif ($_.Name -eq 'IPAddress') {
+                    "$($_.Name) = '{0}'" -f ($this."$($_.Name)" -join ';')
+                } elseif ($_.Name -in 'StatusData', 'Errors') {
+                    "$($_.Name) = '[{0}]'" -f (($this."$($_.Name)" | ConvertTo-Json -Compress -Depth 100) | ConvertTo-Json -Compress)
+                } elseif ($_.Name -eq 'AdditionalData') {
+                    "$($_.Name) = '[{0}]'" -f ($this."$($_.Name)" | ConvertTo-Json -Compress -Depth 100)
+                } else {
+                    if ($_.Definition.Split(' ')[0] -eq 'datetime') {
+                        if ($this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss') -eq '0001-01-01 00:00:00') {
+                            "$($_.Name) = NULL"
+                        } else {
+                            "$($_.Name) = '{0}'" -f $this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss')
+                        }
+                    } else {
+                        "$($_.Name) = '{0}'" -f $this."$($_.Name)"
+                    }
+                }
+            } -join ','),
+            $this.JobId
+        )
+        return $query
+    }
+
+    [string] GetSQLInsert () {
+        $query = ("INSERT INTO StatusReport ({0}) VALUES ({1})" -f @(
+            (($this | Get-Member -MemberType Property | Where-Object -FilterScript {$_.Name -ne 'LastModifiedTime'}).Name -join ','),
+            (($this | Get-Member -MemberType Property).ForEach{
+                if ($_.Name -eq 'LastModifiedTime') {
+                    # skip as missing in SQL table, only present in EDB
+                } elseif ($_.Name -eq 'IPAddress') {
+                    "'{0}'" -f ($this."$($_.Name)" -join ';')
+                } elseif ($_.Name -in 'StatusData', 'Errors') {
+                    "'[{0}]'" -f (($this."$($_.Name)" | ConvertTo-Json -Compress -Depth 100) | ConvertTo-Json -Compress)
+                } elseif ($_.Name -eq 'AdditionalData') {
+                    "'{0}'" -f ($this."$($_.Name)" | ConvertTo-Json -Compress -Depth 100)
+                } else {
+                    if ($_.Definition.Split(' ')[0] -eq 'datetime') {
+                        if ($this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss') -eq '0001-01-01 00:00:00') {
+                            'NULL'
+                        } else {
+                            "'{0}'" -f $this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss')
+                        }
+                    } else {
+                        "'{0}'" -f $this."$($_.Name)"
+                    }
+                }
+            } -join ',')
+        ))
+        return $query
+    }
+
+    [string] GetSQLDelete () {
+        return ("DELETE FROM StatusReport WHERE JobId = '{0}'" -f $this.JobId)
     }
 }
 
@@ -518,7 +586,7 @@ function Get-DSCPullServerAdminRegistration {
 function Get-DSCPullServerAdminStatusReport {
     [CmdletBinding(DefaultParameterSetName = 'Connection')]
     param (
-        # Disabled pipeline binding because ese single session issue    
+        # Disabled pipeline binding because ese single session issue
         [Parameter(<#ValueFromPipelineByPropertyName#>)]
         [guid] $AgentId,
 
@@ -527,6 +595,9 @@ function Get-DSCPullServerAdminStatusReport {
         [ValidateNotNullOrEmpty()]
         [Alias('Name')]
         [string] $NodeName,
+
+        [Parameter()]
+        [guid] $JobId,
 
         [Parameter()]
         [datetime] $FromStartTime,
@@ -578,8 +649,11 @@ function Get-DSCPullServerAdminStatusReport {
                 if ($PSBoundParameters.ContainsKey('FromStartTime')) {
                     $Params.Add('FromStartTime', $FromStartTime)
                 }
-                if ($PSBoundParameters.ContainsKey("ToStartTime")) {
+                if ($PSBoundParameters.ContainsKey('ToStartTime')) {
                     $Params.Add('ToStartTime', $ToStartTime)
+                }
+                if ($PSBoundParameters.ContainsKey('JobId')) {
+                    $Params.Add('JobId', $JobId)
                 }
 
                 Get-DSCPullServerESEStatusReport @eseParams
@@ -596,9 +670,11 @@ function Get-DSCPullServerAdminStatusReport {
                 if ($PSBoundParameters.ContainsKey("FromStartTime")) {
                     [void] $filters.Add(("StartTime >= '{0}'" -f (Get-Date $FromStartTime -f s)))
                 }
-
                 if ($PSBoundParameters.ContainsKey("ToStartTime")) {
                     [void] $filters.Add(("StartTime <= '{0}'" -f (Get-Date $ToStartTime -f s)))
+                }
+                if ($PSBoundParameters.ContainsKey("JobId")) {
+                    [void] $filters.Add(("JobId = '{0}'" -f $JobId))
                 }
 
                 if ($filters.Count -ge 1) {
@@ -769,11 +845,107 @@ function New-DSCPullServerAdminDevice {
     }
 }
 
-<#
 function New-DSCPullServerAdminStatusReport {
+    [CmdletBinding(
+        DefaultParameterSetName = 'Connection',
+        ConfirmImpact = 'Medium',
+        SupportsShouldProcess
+    )]
+    param (
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [guid] $JobId,
 
+        [Parameter()]
+        [Guid] $Id = [guid]::NewGuid(),
+
+        [Parameter()]
+        [string] $OperationType,
+
+        [Parameter()]
+        [string] $RefreshMode,
+
+        [Parameter()]
+        [string] $Status,
+
+        [Parameter()]
+        [string] $LCMVersion,
+
+        [Parameter()]
+        [string] $ReportFormatVersion,
+
+        [Parameter()]
+        [string] $ConfigurationVersion,
+
+        [Parameter()]
+        [string] $NodeName,
+
+        [Parameter()]
+        [IPAddress[]] $IPAddress,
+
+        [Parameter()]
+        [datetime] $StartTime,
+
+        [Parameter()]
+        [datetime] $EndTime,
+
+        [Parameter()]
+        [datetime] $LastModifiedTime,
+
+        [Parameter()]
+        [PSObject[]] $Errors,
+
+        [Parameter()]
+        [PSObject[]] $StatusData,
+
+        [Parameter()]
+        [bool] $RebootRequested,
+
+        [Parameter()]
+        [PSObject[]] $AdditionalData,
+
+        [Parameter(ParameterSetName = 'Connection')]
+        [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
+
+        [Parameter(Mandatory, ParameterSetName = 'SQL')]
+        [ValidateNotNullOrEmpty()]
+        [Alias('SQLInstance')]
+        [string] $SQLServer,
+
+        [Parameter(ParameterSetName = 'SQL')]
+        [pscredential] $Credential,
+
+        [Parameter(ParameterSetName = 'SQL')]
+        [string] $Database
+    )
+    begin {
+        if ($null -ne $Connection -and -not $PSBoundParameters.ContainsKey('Connection')) {
+            [void] $PSBoundParameters.Add('Connection', $Connection)
+        }
+        $Connection = PreProc -ParameterSetName $PSCmdlet.ParameterSetName @PSBoundParameters
+        if ($null -eq $Connection) {
+            break
+        }
+    }
+    process {
+        $report = [DSCNodeStatusReport]::new()
+        $PSBoundParameters.Keys.Where{
+            $_ -in ($report | Get-Member -MemberType Property).Name
+        }.ForEach{
+            $report.$_ = $PSBoundParameters.$_
+        }
+
+        $existingReport = Get-DSCPullServerAdminStatusReport -Connection $Connection -JobId $report.JobId
+        if ($null -ne $existingReport) {
+            throw "A Report with JobId '$JobId' already exists."
+        } else {
+            $tsqlScript = $report.GetSQLInsert()
+        }
+
+        if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+            Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+        }
+    }
 }
-#>
 #endregion
 
 #region table Set functions
@@ -927,11 +1099,107 @@ function Set-DSCPullServerAdminDevice {
     }
 }
 
-<#
 function Set-DSCPullServerAdminStatusReport {
+    [CmdletBinding(
+        DefaultParameterSetName = 'Connection',
+        ConfirmImpact = 'Medium',
+        SupportsShouldProcess
+    )]
+    param (
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [guid] $JobId,
 
+        [Parameter()]
+        [Guid] $Id,
+
+        [Parameter()]
+        [string] $OperationType,
+
+        [Parameter()]
+        [string] $RefreshMode,
+
+        [Parameter()]
+        [string] $Status,
+
+        [Parameter()]
+        [string] $LCMVersion,
+
+        [Parameter()]
+        [string] $ReportFormatVersion,
+
+        [Parameter()]
+        [string] $ConfigurationVersion,
+
+        [Parameter()]
+        [string] $NodeName,
+
+        [Parameter()]
+        [IPAddress[]] $IPAddress,
+
+        [Parameter()]
+        [datetime] $StartTime,
+
+        [Parameter()]
+        [datetime] $EndTime,
+
+        [Parameter()]
+        [datetime] $LastModifiedTime,
+
+        [Parameter()]
+        [PSObject[]] $Errors,
+
+        [Parameter()]
+        [PSObject[]] $StatusData,
+
+        [Parameter()]
+        [bool] $RebootRequested,
+
+        [Parameter()]
+        [PSObject[]] $AdditionalData,
+
+        [Parameter(ParameterSetName = 'Connection')]
+        [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
+
+        [Parameter(Mandatory, ParameterSetName = 'SQL')]
+        [ValidateNotNullOrEmpty()]
+        [Alias('SQLInstance')]
+        [string] $SQLServer,
+
+        [Parameter(ParameterSetName = 'SQL')]
+        [pscredential] $Credential,
+
+        [Parameter(ParameterSetName = 'SQL')]
+        [string] $Database
+    )
+    begin {
+        if ($null -ne $Connection -and -not $PSBoundParameters.ContainsKey('Connection')) {
+            [void] $PSBoundParameters.Add('Connection', $Connection)
+        }
+        $Connection = PreProc -ParameterSetName $PSCmdlet.ParameterSetName @PSBoundParameters
+        if ($null -eq $Connection) {
+            break
+        }
+    }
+    process {
+        $existingReport = Get-DSCPullServerAdminStatusReport -Connection $Connection -JobId $JobId
+        if ($null -eq $existingReport) {
+            throw "A Report with JobId '$JobId' was not found"
+        } else {
+            $PSBoundParameters.Keys.Where{
+                $_ -in ($existingReport | Get-Member -MemberType Property).Name
+            }.ForEach{
+                if ($null -ne $PSBoundParameters.$_) {
+                    $existingReport.$_ = $PSBoundParameters.$_
+                }
+            }
+            $tsqlScript = $existingReport.GetSQLUpdate()
+
+            if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+                Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+            }
+        }
+    }
 }
-#>
 #endregion
 
 #region table Remove functions
@@ -1027,115 +1295,51 @@ function Remove-DSCPullServerAdminDevice {
     }
 }
 
-<#
 function Remove-DSCPullServerAdminStatusReport {
-    [CmdletBinding(DefaultParameterSetName = "DefaultConnection")]
+    [CmdletBinding(
+        DefaultParameterSetName = 'Connection',
+        ConfirmImpact = 'High',
+        SupportsShouldProcess
+    )]
     param (
-        [Parameter(ParameterSetName = "DefaultConnection", DontShow)]
-        [DSCPullServerConnection]
-        $Connection = $script:DefaultDSCPullServerConnection,
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [guid] $JobId,
 
-        [Parameter(Mandatory, ParameterSetName = "ESE")]
-        [string]
-        $ESEFilePath,
+        [Parameter(ParameterSetName = 'Connection')]
+        [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
 
-        [Parameter(Mandatory, ParameterSetName = "SQL")]
-        [string]
-        $SQLServer,
+        [Parameter(Mandatory, ParameterSetName = 'SQL')]
+        [ValidateNotNullOrEmpty()]
+        [Alias('SQLInstance')]
+        [string] $SQLServer,
 
-        [Parameter(ParameterSetName = "SQL")]
-        [pscredential]
-        $SQLCredential,
+        [Parameter(ParameterSetName = 'SQL')]
+        [pscredential] $Credential,
 
-        [Parameter(ParameterSetName = "SQL")]
-        [string]
-        $Database,
-
-        [Parameter(ValueFromPipelineByPropertyName, DontShow)]
-        [guid]
-        $JobId,
-
-        [Parameter()]
-        [datetime]
-        $FromStartTime,
-
-        [Parameter()]
-        [datetime]
-        $ToStartTime
+        [Parameter(ParameterSetName = 'SQL')]
+        [string] $Database
     )
-
     begin {
-        if ($PSCmdlet.ParameterSetName -eq 'DefaultConnection' -and
-            $false -eq (Test-DefaultDSCPullServerConnection $Connection)) {
+        if ($null -ne $Connection -and -not $PSBoundParameters.ContainsKey('Connection')) {
+            [void] $PSBoundParameters.Add('Connection', $Connection)
+        }
+        $Connection = PreProc -ParameterSetName $PSCmdlet.ParameterSetName @PSBoundParameters
+        if ($null -eq $Connection) {
             break
-        } elseif ($PSCmdlet.ParameterSetName -eq 'DefaultConnection') {
-            if ($Connection -is [DSCPullServerESEConnection]) {
-                $PSBoundParameters["ESEFilePath"] = $Connection.ESEFilePath
-            }
-
-            if ($Connection -is [DSCPullServerSQLConnection]) {
-                $PSBoundParameters["SQLServer"] = $Connection.SQLServer
-                if ($null -ne $Connection.Credential) {
-                    $PSBoundParameters["SQLCredential"] = $Connection.SQLCredential
-                }
-            }
-        } else {
-            $Connection = [DSCPullServerConnection]::New($PSCmdlet.ParameterSetName)
-        }
-
-        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
-            Mount-ESEDSCPullServerAdminDatabase -ESEPath $PSBoundParameters["ESEFilePath"]
         }
     }
-
-    end {
-        if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE) {
-            Dismount-ESEDSCPullServerAdminDatabase
-        }
-    }
-
     process {
-        switch ($Connection.Type) {
-
-            ([DSCPullServerConnectionType]::ESE).ToString() {
-                Write-Warning "Deleting Status Reports from ESE database using JobID or End Date "
-                $Params = @{}
-                if ($PSBoundParameters.ContainsKey("FromStartTime")) {
-                    $Params.Add("FromStartTime", $FromStartTime)
-                }
-                if ($PSBoundParameters.ContainsKey("ToStartTime")) {
-                    $Params.Add("ToStartTime", $ToStartTime)
-                }
-                Remove-ESEDSCPullServerAdminReport @Params
-            }
-
-            ([DSCPullServerConnectionType]::SQL).ToString() {
-                $Command = "DELETE FROM RegistrationData {0}"
-                $Filters = @()
-
-                if ($PSBoundParameters.ContainsKey("JobId")) {
-                    $Filters += "JobId = '$JobId'"
-                }
-
-                if ($PSBoundParameters.ContainsKey("FromStartTime")) {
-                    $Filters += "StartTime >= '{0}'" -f (Get-Date $FromStartTime -f s)
-                }
-
-                if ($PSBoundParameters.ContainsKey("ToStartTime")) {
-                    $Filters += "StartTime <= '{0}'" -f (Get-Date $ToStartTime -f s)
-                }
-
-                if ($Filters.Count -gt 0) {
-                    $Command += " WHERE {0}" -f ($Filters -join ' AND ')
-                }
-
-                $Output = Invoke-DSCPullServerSQLCommand @PSBoundParameters -CommandType Set -Script $Command
-                Write-Verbose "Agents Deleted: $Output"
+        $existingReport = Get-DSCPullServerAdminStatusReport -Connection $Connection -JobId $JobId
+        if ($null -eq $existingReport) {
+            Write-Warning -Message "A Report with JobId '$JobId' was not found"
+        } else {
+            $tsqlScript = $existingReport.GetSQLDelete()
+            if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+                Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
             }
         }
     }
 }
-#>
 #endregion
 
 #region database functions
@@ -1648,7 +1852,10 @@ function Get-DSCPullServerESEStatusReport {
         [datetime] $FromStartTime,
 
         [Parameter()]
-        [datetime] $ToStartTime
+        [datetime] $ToStartTime,
+
+        [Parameter()]
+        [guid] $JobId
     )
     $table = 'StatusReport'
     [Microsoft.Isam.Esent.Interop.JET_TABLEID] $tableId = [Microsoft.Isam.Esent.Interop.JET_TABLEID]::Nil
@@ -1768,6 +1975,10 @@ function Get-DSCPullServerESEStatusReport {
                 }
 
                 if ($PSBoundParameters.ContainsKey('ToStartTime') -and $statusReport.AgentId -le $ToStartTime) {
+                    continue
+                }
+
+                if ($PSBoundParameters.ContainsKey('JobId') -and $statusReport.JobId -ne $JobId) {
                     continue
                 }
 

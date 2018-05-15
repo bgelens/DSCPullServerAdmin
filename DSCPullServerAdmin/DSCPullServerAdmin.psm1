@@ -6,12 +6,12 @@ $DSCPullServerConnections = [System.Collections.ArrayList]::new()
 # Unlock NEW, SET, REMOVE for ESE database (Now only for SQL)
 # Add pipeline support for ESE (have some sort of session manager that closes the db connection only when entire pipeline is complete)
 # Currently I'm unable to populate Devices table though SQL enabled Pull Server using WMF5.1 or WMF4 LCM.
-# Add InputObject to functions instead of ValueFromPipelineByPropertyName to handle pipeline processing
-# * Based on InputObject, skip lookup for Set / Remove
-# * Based on Parameter, keep lookup for Set / Remove
 # Have new connections also validate that they can actually do something with the connection or else fail
 # Abstract connections into higher level management class?
-# Finish New, Set, Remove for SQL StatusReport functions
+# Unlock New Database function
+# Unlock Migrate function
+# Remove C# code
+# Restructure project into multiple files and have build process to publish as single psm1
 
 $deviceStatusCodeMap = @{
     0 = 'Configuration was applied successfully'
@@ -951,19 +951,24 @@ function New-DSCPullServerAdminStatusReport {
 #region table Set functions
 function Set-DSCPullServerAdminRegistration {
     [CmdletBinding(
-        DefaultParameterSetName = 'Connection',
+        DefaultParameterSetName = 'InputObject_Connection',
         ConfirmImpact = 'Medium',
         SupportsShouldProcess
     )]
     param (
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_Connection')]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_SQL')]
+        [DSCNodeRegistration] $InputObject,
+
+        [Parameter(Mandatory, ParameterSetName = 'Manual_Connection')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
         [guid] $AgentId,
 
         [Parameter()]
         [ValidateSet('2.0')]
         [string] $LCMVersion = '2.0',
 
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string] $NodeName,
 
@@ -973,18 +978,22 @@ function Set-DSCPullServerAdminRegistration {
         [Parameter()]
         [string[]] $ConfigurationNames,
 
-        [Parameter(ParameterSetName = 'Connection')]
+        [Parameter(ParameterSetName = 'InputObject_Connection')]
+        [Parameter(ParameterSetName = 'Manual_Connection')]
         [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
 
-        [Parameter(Mandatory, ParameterSetName = 'SQL')]
+        [Parameter(Mandatory, ParameterSetName = 'InputObject_SQL')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
         [ValidateNotNullOrEmpty()]
         [Alias('SQLInstance')]
         [string] $SQLServer,
 
-        [Parameter(ParameterSetName = 'SQL')]
+        [Parameter(ParameterSetName = 'InputObject_SQL')]
+        [Parameter(ParameterSetName = 'Manual_SQL')]
         [pscredential] $Credential,
 
-        [Parameter(ParameterSetName = 'SQL')]
+        [Parameter(ParameterSetName = 'InputObject_SQL')]
+        [Parameter(ParameterSetName = 'Manual_SQL')]
         [string] $Database
     )
 
@@ -998,37 +1007,48 @@ function Set-DSCPullServerAdminRegistration {
         }
     }
     process {
-        $existingRegistration = Get-DSCPullServerAdminRegistration -Connection $Connection -AgentId $nodeRegistration.AgentId
-        if ($null -eq $existingRegistration) {
-            throw "A NodeRegistration with AgentId '$AgentId' was not found"
+        if (-not $PSBoundParameters.ContainsKey('InputObject')) {
+            $existingRegistration = Get-DSCPullServerAdminRegistration -Connection $Connection -AgentId $nodeRegistration.AgentId
+            if ($null -eq $existingRegistration) {
+                throw "A NodeRegistration with AgentId '$AgentId' was not found"
+            }
         } else {
-            $PSBoundParameters.Keys.Where{
-                $_ -in ($existingRegistration | Get-Member -MemberType Property).Name
-            }.ForEach{
-                if ($null -ne $PSBoundParameters.$_) {
-                    $existingRegistration.$_ = $PSBoundParameters.$_
-                }
-            }
-            $tsqlScript = $existingRegistration.GetSQLUpdate()
+            $existingRegistration = $InputObject
+        }
 
-            if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
-                Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+        $PSBoundParameters.Keys.Where{
+            $_ -in ($existingRegistration | Get-Member -MemberType Property).Name
+        }.ForEach{
+            if ($null -ne $PSBoundParameters.$_) {
+                $existingRegistration.$_ = $PSBoundParameters.$_
             }
+        }
+
+        $tsqlScript = $existingRegistration.GetSQLUpdate()
+
+        if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+            Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
         }
     }
 }
 
 function Set-DSCPullServerAdminDevice {
     [CmdletBinding(
-        DefaultParameterSetName = 'Connection',
+        DefaultParameterSetName = 'InputObject_Connection',
         ConfirmImpact = 'Medium',
         SupportsShouldProcess
     )]
     param (
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_Connection')]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_SQL')]
+        [DSCDevice] $InputObject,
+
+        [Parameter(Mandatory, ParameterSetName = 'Manual_Connection')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
         [guid] $ConfigurationID,
 
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_Connection')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
         [ValidateNotNullOrEmpty()]
         [string] $TargetName,
 
@@ -1053,21 +1073,23 @@ function Set-DSCPullServerAdminDevice {
         [Parameter()]
         [uint32] $StatusCode,
 
-        [Parameter(ParameterSetName = 'Connection')]
+        [Parameter(ParameterSetName = 'InputObject_Connection')]
+        [Parameter(ParameterSetName = 'Manual_Connection')]
         [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
 
-        [Parameter(Mandatory, ParameterSetName = 'SQL')]
+        [Parameter(Mandatory, ParameterSetName = 'InputObject_SQL')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
         [ValidateNotNullOrEmpty()]
         [Alias('SQLInstance')]
         [string] $SQLServer,
 
-        [Parameter(ParameterSetName = 'SQL')]
+        [Parameter(ParameterSetName = 'InputObject_SQL')]
+        [Parameter(ParameterSetName = 'Manual_SQL')]
         [pscredential] $Credential,
 
-        [Parameter(ParameterSetName = 'SQL')]
-        [string] $Database,
-
-        [switch] $Force
+        [Parameter(ParameterSetName = 'InputObject_SQL')]
+        [Parameter(ParameterSetName = 'Manual_SQL')]
+        [string] $Database
     )
     begin {
         if ($null -ne $Connection -and -not $PSBoundParameters.ContainsKey('Connection')) {
@@ -1079,7 +1101,12 @@ function Set-DSCPullServerAdminDevice {
         }
     }
     process {
-        $existingDevice = Get-DSCPullServerAdminDevice -Connection $Connection -TargetName $TargetName
+        if (-not $PSBoundParameters.ContainsKey('InputObject')) {
+            $existingDevice = Get-DSCPullServerAdminDevice -Connection $Connection -TargetName $TargetName
+        } else {
+            $existingDevice = $InputObject
+        }
+
         if ($null -eq $existingDevice) {
             throw "A Device with TargetName '$TargetName' was not found"
         } else {
@@ -1101,12 +1128,17 @@ function Set-DSCPullServerAdminDevice {
 
 function Set-DSCPullServerAdminStatusReport {
     [CmdletBinding(
-        DefaultParameterSetName = 'Connection',
+        DefaultParameterSetName = 'InputObject_Connection',
         ConfirmImpact = 'Medium',
         SupportsShouldProcess
     )]
     param (
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_Connection')]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_SQL')]
+        [DSCNodeStatusReport] $InputObject,
+
+        [Parameter(Mandatory, ParameterSetName = 'Manual_Connection')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
         [guid] $JobId,
 
         [Parameter()]
@@ -1157,18 +1189,22 @@ function Set-DSCPullServerAdminStatusReport {
         [Parameter()]
         [PSObject[]] $AdditionalData,
 
-        [Parameter(ParameterSetName = 'Connection')]
+        [Parameter(ParameterSetName = 'InputObject_Connection')]
+        [Parameter(ParameterSetName = 'Manual_Connection')]
         [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
 
-        [Parameter(Mandatory, ParameterSetName = 'SQL')]
+        [Parameter(Mandatory, ParameterSetName = 'InputObject_SQL')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
         [ValidateNotNullOrEmpty()]
         [Alias('SQLInstance')]
         [string] $SQLServer,
 
-        [Parameter(ParameterSetName = 'SQL')]
+        [Parameter(ParameterSetName = 'InputObject_SQL')]
+        [Parameter(ParameterSetName = 'Manual_SQL')]
         [pscredential] $Credential,
 
-        [Parameter(ParameterSetName = 'SQL')]
+        [Parameter(ParameterSetName = 'InputObject_SQL')]
+        [Parameter(ParameterSetName = 'Manual_SQL')]
         [string] $Database
     )
     begin {
@@ -1181,7 +1217,12 @@ function Set-DSCPullServerAdminStatusReport {
         }
     }
     process {
-        $existingReport = Get-DSCPullServerAdminStatusReport -Connection $Connection -JobId $JobId
+        if (-not $PSBoundParameters.ContainsKey('InputObject')) {
+            $existingReport = Get-DSCPullServerAdminStatusReport -Connection $Connection -JobId $JobId
+        } else {
+            $existingReport = $InputObject
+        }
+
         if ($null -eq $existingReport) {
             throw "A Report with JobId '$JobId' was not found"
         } else {
@@ -1205,26 +1246,35 @@ function Set-DSCPullServerAdminStatusReport {
 #region table Remove functions
 function Remove-DSCPullServerAdminRegistration {
     [CmdletBinding(
-        DefaultParameterSetName = 'Connection',
+        DefaultParameterSetName = 'InputObject_Connection',
         ConfirmImpact = 'High',
         SupportsShouldProcess
     )]
     param (
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_Connection')]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_SQL')]
+        [DSCNodeRegistration] $InputObject,
+
+        [Parameter(Mandatory, ParameterSetName = 'Manual_Connection')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
         [guid] $AgentId,
 
-        [Parameter(ParameterSetName = 'Connection')]
+        [Parameter(ParameterSetName = 'InputObject_Connection')]
+        [Parameter(ParameterSetName = 'Manual_Connection')]
         [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
 
-        [Parameter(Mandatory, ParameterSetName = 'SQL')]
+        [Parameter(Mandatory, ParameterSetName = 'InputObject_SQL')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
         [ValidateNotNullOrEmpty()]
         [Alias('SQLInstance')]
         [string] $SQLServer,
 
-        [Parameter(ParameterSetName = 'SQL')]
+        [Parameter(ParameterSetName = 'InputObject_SQL')]
+        [Parameter(ParameterSetName = 'Manual_SQL')]
         [pscredential] $Credential,
 
-        [Parameter(ParameterSetName = 'SQL')]
+        [Parameter(ParameterSetName = 'InputObject_SQL')]
+        [Parameter(ParameterSetName = 'Manual_SQL')]
         [string] $Database
     )
     begin {
@@ -1237,7 +1287,12 @@ function Remove-DSCPullServerAdminRegistration {
         }
     }
     process {
-        $existingRegistration = Get-DSCPullServerAdminRegistration -Connection $Connection -AgentId $AgentId
+        if (-not $PSBoundParameters.ContainsKey('InputObject')) {
+            $existingRegistration = Get-DSCPullServerAdminRegistration -Connection $Connection -AgentId $AgentId
+        } else {
+            $existingRegistration = $InputObject
+        }
+
         if ($null -eq $existingRegistration) {
             Write-Warning -Message "A NodeRegistration with AgentId '$AgentId' was not found"
         } else {
@@ -1251,26 +1306,35 @@ function Remove-DSCPullServerAdminRegistration {
 
 function Remove-DSCPullServerAdminDevice {
     [CmdletBinding(
-        DefaultParameterSetName = 'Connection',
+        DefaultParameterSetName = 'InputObject_Connection',
         ConfirmImpact = 'High',
         SupportsShouldProcess
     )]
     param (
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_Connection')]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_SQL')]
+        [DSCDevice] $InputObject,
+
+        [Parameter(Mandatory, ParameterSetName = 'Manual_Connection')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
         [string] $TargetName,
 
-        [Parameter(ParameterSetName = 'Connection')]
+        [Parameter(ParameterSetName = 'InputObject_Connection')]
+        [Parameter(ParameterSetName = 'Manual_Connection')]
         [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
 
-        [Parameter(Mandatory, ParameterSetName = 'SQL')]
+        [Parameter(Mandatory, ParameterSetName = 'InputObject_SQL')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
         [ValidateNotNullOrEmpty()]
         [Alias('SQLInstance')]
         [string] $SQLServer,
 
-        [Parameter(ParameterSetName = 'SQL')]
+        [Parameter(ParameterSetName = 'InputObject_SQL')]
+        [Parameter(ParameterSetName = 'Manual_SQL')]
         [pscredential] $Credential,
 
-        [Parameter(ParameterSetName = 'SQL')]
+        [Parameter(ParameterSetName = 'InputObject_SQL')]
+        [Parameter(ParameterSetName = 'Manual_SQL')]
         [string] $Database
     )
     begin {
@@ -1283,7 +1347,12 @@ function Remove-DSCPullServerAdminDevice {
         }
     }
     process {
-        $existingDevice = Get-DSCPullServerAdminDevice -Connection $Connection -TargetName $TargetName
+        if (-not $PSBoundParameters.ContainsKey('InputObject')) {
+            $existingDevice = Get-DSCPullServerAdminDevice -Connection $Connection -TargetName $TargetName
+        } else {
+            $existingDevice = $InputObject
+        }
+
         if ($null -eq $existingDevice) {
             Write-Warning -Message "A Device with TargetName '$TargetName' was not found"
         } else {
@@ -1297,26 +1366,35 @@ function Remove-DSCPullServerAdminDevice {
 
 function Remove-DSCPullServerAdminStatusReport {
     [CmdletBinding(
-        DefaultParameterSetName = 'Connection',
+        DefaultParameterSetName = 'InputObject_Connection',
         ConfirmImpact = 'High',
         SupportsShouldProcess
     )]
     param (
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_Connection')]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_SQL')]
+        [DSCNodeStatusReport] $InputObject,
+
+        [Parameter(Mandatory, ParameterSetName = 'Manual_Connection')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
         [guid] $JobId,
 
-        [Parameter(ParameterSetName = 'Connection')]
+        [Parameter(ParameterSetName = 'InputObject_Connection')]
+        [Parameter(ParameterSetName = 'Manual_Connection')]
         [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
 
-        [Parameter(Mandatory, ParameterSetName = 'SQL')]
+        [Parameter(Mandatory, ParameterSetName = 'InputObject_SQL')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
         [ValidateNotNullOrEmpty()]
         [Alias('SQLInstance')]
         [string] $SQLServer,
 
-        [Parameter(ParameterSetName = 'SQL')]
+        [Parameter(ParameterSetName = 'InputObject_SQL')]
+        [Parameter(ParameterSetName = 'Manual_SQL')]
         [pscredential] $Credential,
 
-        [Parameter(ParameterSetName = 'SQL')]
+        [Parameter(ParameterSetName = 'InputObject_SQL')]
+        [Parameter(ParameterSetName = 'Manual_SQL')]
         [string] $Database
     )
     begin {
@@ -1329,7 +1407,12 @@ function Remove-DSCPullServerAdminStatusReport {
         }
     }
     process {
-        $existingReport = Get-DSCPullServerAdminStatusReport -Connection $Connection -JobId $JobId
+        if (-not $PSBoundParameters.ContainsKey('InputObject')) {
+            $existingReport = Get-DSCPullServerAdminStatusReport -Connection $Connection -JobId $JobId
+        } else {
+            $existingReport = $InputObject
+        }
+
         if ($null -eq $existingReport) {
             Write-Warning -Message "A Report with JobId '$JobId' was not found"
         } else {
@@ -2128,7 +2211,6 @@ function Test-DefaultDSCPullServerConnection {
 function PreProc {
     param (
         [Parameter(Mandatory)]
-        [ValidateSet('Connection', 'SQL', 'ESE')]
         [string] $ParameterSetName,
 
         [DSCPullServerConnection] $Connection,
@@ -2145,13 +2227,13 @@ function PreProc {
         $DroppedParams
     )
 
-    switch ($ParameterSetName) {
-        Connection {
+    switch -Wildcard ($ParameterSetName) {
+        *Connection {
             if (Test-DefaultDSCPullServerConnection $Connection) {
                 return $Connection
             }
         }
-        SQL {
+        *SQL {
             $newSQLArgs = @{
                 SQLServer = $SQLServer
                 DontStore = $true
@@ -2164,7 +2246,7 @@ function PreProc {
             }
             New-DSCPullServerAdminConnection @newSQLArgs
         }
-        ESE {
+        *ESE {
             $newESEArgs = @{
                 ESEFilePath = $ESEFilePath
                 DontStore = $true

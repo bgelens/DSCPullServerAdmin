@@ -1009,7 +1009,7 @@ function Set-DSCPullServerAdminRegistration {
     }
     process {
         if (-not $PSBoundParameters.ContainsKey('InputObject')) {
-            $existingRegistration = Get-DSCPullServerAdminRegistration -Connection $Connection -AgentId $nodeRegistration.AgentId
+            $existingRegistration = Get-DSCPullServerAdminRegistration -Connection $Connection -AgentId $AgentId
             if ($null -eq $existingRegistration) {
                 throw "A NodeRegistration with AgentId '$AgentId' was not found"
             }
@@ -2041,7 +2041,7 @@ function Get-DSCPullServerESEStatusReport {
                         $Connection.SessionId,
                         $tableId,
                         $column.Columnid
-                    )
+                    ) | ConvertFrom-Json
                 } elseif ($column.Name -eq 'AdditionalData') {
                     $statusReport."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
                         $Connection.SessionId,

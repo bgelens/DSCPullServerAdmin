@@ -1,51 +1,43 @@
 # DSCPullServerAdmin
 
-A module to mount the DSC Pullserver edb database file to get, manipulate and remove data from it. Secondly (working on now, see [#5](https://github.com/bgelens/DSCPullServerAdmin/issues/5)), the module can be used to move data from the edb to the newly supported SQL database.
+A module to work with the DSC PullServer EDB (ESENT) and SQL database and provide a better Admin oriented Pull Server experience.
 
-Initially, the alternate mdb database was also in scope for this module to process but unfortunately the required odbc driver is 32 bits only.
+The module enables you to move data from the EDB database to a SQL database. This allows you to "upgrade" your Pull Server implementation to make use of the SQL backend introduced in Windows Server RS4 (1803) and Server 2019.
+
+The module supports accessing, manipulating, removing Devices (Legacy LCMv1, ConfigurationId), Registrations (LCMv2, AgentId) and StatusReports (LCMv2). All this data can be easily moved over to SQL as well.
+
+Initially, the mdb database was also in scope for this module to process but unfortunately the required odbc driver is 32 bits only. For now mdb is out of scope.
 
 **Note that the current state of this module is very alpha / experimental. Use at your own risk and if possible always create a backup!**
 
-Primary goals:
+## Examples
 
-- [x] Access reports more easily
-- [x] Access v2 registered node information
-- [x] Access v1 node information
-- [x] Change node ConfigurationName server side\
-  Thanks to PR [#4](https://github.com/bgelens/DSCPullServerAdmin/pull/4) from [@rdbartram](https://github.com/rdbartram)!
-- [x] Create new SQL Database
-- [x] Move / Migrate data from edb to SQL Database
+### EDB
 
-![InitialCmdletOutput1](images/getregdatasql.gif)
+Connect with EDB (the database cannot be in use by another process!) and get Devices and Registrations out of it.
 
-## SQL Interfacing
+![edb01](/images/edb01.png)
 
-Basic interfacing existing SQL DB:
+Get StatusReports out of the EDB.
 
-```powershell
-Set-DefaultDSCPullServerConnection -SQLServer myhost\myinstance -SQLCredential (Get-Credential)
-Get-DSCPullServerAdminRegistration -NodeName LCMClient
-```
+![edb02](/images/edb02.png)
 
-Create new DB and import data from ese:
+![edb03](/images/edb03.png)
 
-The default is from ESE to SQL and will move registred clients of version 1 and 2
+### SQL
 
-```powershell
-New-DSCPullServerAdminSQLDatabase -SQLServer myhost\myinstance -SQLCredential (Get-Credential) -DBFolderPath D:\DSCDatabase
-Import-DSCPullServerAdminData -SQLServer myhost\myinstance -SQLCredential (Get-Credential) -Database DSC -ESEFilePath D:\DSCService\devices.edb 
-```
+Connect with SQL and Get, Set, Create and Remove data.
 
-Connect existing DB and import data from ese:
+![sql01](/images/sql01.png)
 
-```powershell
-Set-DefaultDSCPullServerConnection -ESEFilePath D:\DSCService\devices.edb
-Get-DSCPullServerAdminRegistration -NodeName LCMClient
-```
+![sql02](/images/sql02.png)
 
-Connect adhoc to SQL or ESE
+![sql03](/images/sql03.png)
 
-```powershell
-Get-DSCPullServerAdminRegistration -NodeName LCMClient1 -SQLServer myhost\myinstance
-Get-DSCPullServerAdminRegistration -NodeName LCMClient2 -ESEFilePath D:\DSCService\devices.edb
-```
+### Copy Data EDB to SQL
+
+All data can be copied over.
+
+![edb2sql01](/images/edb2sql01.png)
+
+![edb2sql02](/images/edb2sql02.png)

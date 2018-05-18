@@ -4,8 +4,9 @@ $DSCPullServerConnections = [System.Collections.ArrayList]::new()
 
 # TODO:
 # Unlock NEW, SET, REMOVE for ESE database (Now only for SQL)
+# Add daterange on remove statusreport with own parameterset
 # Add pipeline support for ESE (have some sort of session manager that closes the db connection only when entire pipeline is complete)
-# Currently I'm unable to populate Devices table though SQL enabled Pull Server using WMF5.1 or WMF4 LCM.
+# Currently I'm unable to populate Devices table though SQL enabled Pull Server using WMF5.1 or WMF4 LCM. (PullServer bug)
 # Have new connections also validate that they can actually do something with the connection or else fail
 # Abstract connections into higher level management class?
 # Unlock New Database function
@@ -647,13 +648,13 @@ function Get-DSCPullServerAdminStatusReport {
                     $eseParams.Add('NodeName', $NodeName)
                 }
                 if ($PSBoundParameters.ContainsKey('FromStartTime')) {
-                    $Params.Add('FromStartTime', $FromStartTime)
+                    $eseParams.Add('FromStartTime', $FromStartTime)
                 }
                 if ($PSBoundParameters.ContainsKey('ToStartTime')) {
-                    $Params.Add('ToStartTime', $ToStartTime)
+                    $eseParams.Add('ToStartTime', $ToStartTime)
                 }
                 if ($PSBoundParameters.ContainsKey('JobId')) {
-                    $Params.Add('JobId', $JobId)
+                    $eseParams.Add('JobId', $JobId)
                 }
 
                 Get-DSCPullServerESEStatusReport @eseParams
@@ -1426,74 +1427,86 @@ function Remove-DSCPullServerAdminStatusReport {
 #endregion
 
 #region database functions
-<#
-function Import-DSCPullServerAdminData {
-    [CmdletBinding()]
+function Copy-DSCPullServerAdminDataESEToSQL {
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
-        [string]
-        $ESEFilePath,
+        [DSCPullServerESEConnection] $ESEConnection,
 
         [Parameter(Mandatory)]
-        [string]
-        $SQLServer,
+        [DSCPullServerSQLConnection] $SQLConnection,
 
         [Parameter()]
-        [pscredential]
-        $SQLCredential,
+        [ValidateSet('Devices', 'RegistrationData', 'StatusReports')]
+        [string[]] $ObjectsToMigrate = @('Devices', 'RegistrationData'),
 
         [Parameter()]
-        [string]
-        $Database,
-
-        [Parameter()]
-        [ValidateSet("ToSQL", "ToESE")]
-        [string]
-        $Direction = "ToSQL",
-
-        [Parameter()]
-        [ValidateSet("Devices", "RegistrationData", "StatusReports")]
-        [string[]]
-        $ObjectsToMigrate = @("Devices", "RegistrationData")
+        [switch] $Force
     )
 
-    process {
-
-        $GetParams = @{}
-        $NewParams = @{}
-        if ($Direction -eq "ToSQL") {
-            $GetParams = @{ESEFilePath = $ESEFilePath}
-            $NewParams = @{SQLServer = $SQLServer}
-            if ($PSBoundParameters.ContainsKey("SQLCredential")) {
-                $NewParams.Add("SQLCredential", $SQLCredential)
-            }
-            if ($PSBoundParameters.ContainsKey("Database")) {
-                $NewParams.Add("Database", $Database)
-            }
-        } else {
-            $NewParams = @{ESEFilePath = $ESEFilePath}
-            $GetParams = @{SQLServer = $SQLServer}
-            if ($PSBoundParameters.ContainsKey("SQLCredential")) {
-                $GetParams.Add("SQLCredential", $SQLCredential)
-            }
-            if ($PSBoundParameters.ContainsKey("Database")) {
-                $GetParams.Add("Database", $Database)
+    switch ($ObjectsToMigrate) {
+        Devices {
+            $devices = Get-DSCPullServerAdminDevice -Connection $ESEConnection
+            foreach ($d in $devices) {
+                $sqlD = Get-DSCPullServerAdminDevice -Connection $SQLConnection -TargetName $d.TargetName
+                if ($null -eq $sqlD) {
+                    if ($PSCmdlet.ShouldProcess($d.TargetName, "Create new device on $($SQLConnection.SQLServer)\$($SQLConnection.Database)")) {
+                        Invoke-DSCPullServerSQLCommand -Connection $SQLConnection -CommandType Set -Script ($d.GetSQLInsert())
+                    }
+                } else {
+                    if ($PSCmdlet.ShouldProcess($d.TargetName, "Replace existing device on $($SQLConnection.SQLServer)\$($SQLConnection.Database)")) {
+                        if ($Force) {
+                            Invoke-DSCPullServerSQLCommand -Connection $SQLConnection -CommandType Set -Script ($sqlD.GetSQLDelete())
+                            Invoke-DSCPullServerSQLCommand -Connection $SQLConnection -CommandType Set -Script ($d.GetSQLInsert())
+                        } else {
+                            Write-Warning -Message "Unable to replace device $($d.TargetName) as Force switch was not set"
+                        }
+                    }
+                }
             }
         }
-
-        $ObjectsToMigrate | ForEach-Object {
-            switch ($_) {
-                'Devices' {
-                    Get-ESEDSCPullServerAdminDevice @GetParams | New-DSCPullServerAdminDevice @NewParams
+        RegistrationData {
+            $registrations = Get-DSCPullServerAdminRegistration -Connection $ESEConnection
+            foreach ($r in $registrations) {
+                $sqlReg = Get-DSCPullServerAdminRegistration -Connection $SQLConnection -AgentId $r.AgentId
+                if ($null -eq $sqlReg) {
+                    if ($PSCmdlet.ShouldProcess($r.AgentId, "Create new Registration on $($SQLConnection.SQLServer)\$($SQLConnection.Database)")) {
+                        Invoke-DSCPullServerSQLCommand -Connection $SQLConnection -CommandType Set -Script ($r.GetSQLInsert())
+                    }
+                } else {
+                    if ($PSCmdlet.ShouldProcess($r.AgentId, "Replace existing Registration on $($SQLConnection.SQLServer)\$($SQLConnection.Database)")) {
+                        if ($Force) {
+                            Invoke-DSCPullServerSQLCommand -Connection $SQLConnection -CommandType Set -Script ($sqlReg.GetSQLDelete())
+                            Invoke-DSCPullServerSQLCommand -Connection $SQLConnection -CommandType Set -Script ($r.GetSQLInsert())
+                        } else {
+                            Write-Warning -Message "Unable to replace Registration $($r.AgentId) as Force switch was not set"
+                        }
+                    }
                 }
-                'RegistrationData' {
-                    Get-ESEDSCPullServerAdminRegistration @GetParams | New-DSCPullServerAdminRegistration @NewParams
+            }
+        }
+        StatusReports {
+            $reports = Get-DSCPullServerAdminStatusReport -Connection $ESEConnection
+            foreach ($r in $reports) {
+                $sqlRep = Get-DSCPullServerAdminStatusReport -Connection $SQLConnection -JobId $r.JobId -AgentId $r.Id
+                if ($null -eq $sqlRep) {
+                    if ($PSCmdlet.ShouldProcess($r.JobId, "Create new StatusReport on $($SQLConnection.SQLServer)\$($SQLConnection.Database)")) {
+                        Invoke-DSCPullServerSQLCommand -Connection $SQLConnection -CommandType Set -Script ($r.GetSQLInsert())
+                    }
+                } else {
+                    if ($PSCmdlet.ShouldProcess($r.JobId, "Replace StatusReport Registration on $($SQLConnection.SQLServer)\$($SQLConnection.Database)")) {
+                        if ($Force) {
+                            Invoke-DSCPullServerSQLCommand -Connection $SQLConnection -CommandType Set -Script ($sqlRep.GetSQLDelete())
+                            Invoke-DSCPullServerSQLCommand -Connection $SQLConnection -CommandType Set -Script ($r.GetSQLInsert())
+                        } else {
+                            Write-Warning -Message "Unable to replace StatusReport $($r.JobId) as Force switch was not set"
+                        }
+                    }
                 }
             }
         }
     }
 }
-#>
 
 <#
 function New-DSCPullServerAdminSQLDatabase {
@@ -2044,29 +2057,29 @@ function Get-DSCPullServerESEStatusReport {
                         [System.Text.Encoding]::Unicode
                     )
                 }
-
-                if ($PSBoundParameters.ContainsKey('AgentId') -and $statusReport.Id -ne $AgentId) {
-                    continue
-                }
-
-                if ($PSBoundParameters.ContainsKey('NodeName') -and $statusReport.NodeName -notlike $NodeName) {
-                    continue
-                }
-
-                if ($PSBoundParameters.ContainsKey('FromStartTime') -and $statusReport.FromStartTime -ge $FromStartTime) {
-                    continue
-                }
-
-                if ($PSBoundParameters.ContainsKey('ToStartTime') -and $statusReport.AgentId -le $ToStartTime) {
-                    continue
-                }
-
-                if ($PSBoundParameters.ContainsKey('JobId') -and $statusReport.JobId -ne $JobId) {
-                    continue
-                }
-
-                $statusReport
             }
+
+            if ($PSBoundParameters.ContainsKey('AgentId') -and $statusReport.Id -ne $AgentId) {
+                continue
+            }
+
+            if ($PSBoundParameters.ContainsKey('NodeName') -and $statusReport.NodeName -notlike $NodeName) {
+                continue
+            }
+
+            if ($PSBoundParameters.ContainsKey('FromStartTime') -and $statusReport.FromStartTime -ge $FromStartTime) {
+                continue
+            }
+
+            if ($PSBoundParameters.ContainsKey('ToStartTime') -and $statusReport.AgentId -le $ToStartTime) {
+                continue
+            }
+
+            if ($PSBoundParameters.ContainsKey('JobId') -and $statusReport.JobId -ne $JobId) {
+                continue
+            }
+
+            $statusReport
         }
     }
     finally {

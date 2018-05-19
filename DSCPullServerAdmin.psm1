@@ -7,11 +7,7 @@ $DSCPullServerConnections = [System.Collections.ArrayList]::new()
 # Add daterange on remove statusreport with own parameterset
 # Add pipeline support for ESE (have some sort of session manager that closes the db connection only when entire pipeline is complete)
 # Currently I'm unable to populate Devices table though SQL enabled Pull Server using WMF5.1 or WMF4 LCM. (PullServer bug)
-# Have new connections also validate that they can actually do something with the connection or else fail
 # Abstract connections into higher level management class?
-# Unlock New Database function
-# Unlock Migrate function
-# Remove C# code
 # Restructure project into multiple files and have build process to publish as single psm1
 
 $deviceStatusCodeMap = @{
@@ -1519,7 +1515,6 @@ function Copy-DSCPullServerAdminDataESEToSQL {
     }
 }
 
-# TODO: Finish this one!!!
 function New-DSCPullServerAdminSQLDatabase {
     [CmdletBinding()]
     param(
@@ -1598,10 +1593,10 @@ function New-DSCPullServerAdminConnection {
         } else {
             $connection = [DSCPullServerSQLConnection]::New($SQLServer)
         }
-
-        # TODO: Precheck if connection is actually working or else fail
+        if (-not (Test-DSCPullServerDatabaseExist -Connection $connection)) {
+            Write-Error -Message "Could not find database with name $($connection.Database) at $($connection.SQLServer)" -ErrorAction Stop
+        }
     } else {
-        # TODO: Handle ESE same as SQL
         $connection = [DSCPullServerESEConnection]::New($ESEFilePath)
     }
 
@@ -2305,18 +2300,29 @@ function Test-DSCPullServerDatabaseExist {
         [Parameter(ParameterSetName = 'SQL')]
         [pscredential] $Credential,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName = 'SQL')]
         [ValidateNotNullOrEmpty()]
         [Alias('Database')]
-        [string] $Name
+        [string] $Name,
+
+        [Parameter(ParameterSetName = 'Connection')]
+        [DSCPullServerSQLConnection] $Connection
     )
-    $connection = [DSCPullServerSQLConnection]::new($SQLServer)
-    if ($PSBoundParameters.ContainsKey('Credential')) {
-        $connection.Credential = $Credential
+    if ($PSCmdlet.ParameterSetName -eq 'SQL') {
+        $testConnection = [DSCPullServerSQLConnection]::new($SQLServer)
+        if ($PSBoundParameters.ContainsKey('Credential')) {
+            $testConnection.Credential = $Credential
+        }
+    } else {
+        $testConnection = [DSCPullServerSQLConnection]::new($Connection.SQLServer)
+        if ($null -ne $Connection.Credential) {
+            $testConnection.Credential = $Connection.Credential
+        }
+        $Name = $Connection.Database
     }
 
     $testDBQuery = "DECLARE @dbname nvarchar(128) SET @dbname = N'{0}' IF (EXISTS (SELECT name FROM master.dbo.sysdatabases WHERE ('[' + name + ']' = @dbname OR name = @dbname))) SELECT CAST(1 AS bit) ELSE SELECT CAST(0 AS bit)" -f $Name
-    $testResult = Invoke-DSCPullServerSQLCommand -Connection $connection -CommandType Get -Script $testDBQuery
+    $testResult = Invoke-DSCPullServerSQLCommand -Connection $testConnection -CommandType Get -Script $testDBQuery
     $testResult.GetBoolean(0)
 }
 #endregion

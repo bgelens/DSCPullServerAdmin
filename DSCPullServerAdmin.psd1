@@ -66,9 +66,7 @@ Description = 'Get data from your DSC Pull Server database'
 # FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @(
-    'DSCPullServerAdmin.psm1'
-)
+# NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
 # FunctionsToExport = '*'
@@ -91,7 +89,8 @@ CmdletsToExport = @(
     'Set-DSCPullServerAdminDevice',
     'Set-DSCPullServerAdminRegistration',
     'Set-DSCPullServerAdminStatusReport',
-    'Copy-DSCPullServerAdminDataESEToSQL'
+    'Copy-DSCPullServerAdminDataESEToSQL',
+    'New-DSCPullServerAdminSQLDatabase'
 )
 
 # Variables to export from this module

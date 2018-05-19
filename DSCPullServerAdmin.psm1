@@ -391,17 +391,27 @@ class DSCPullServerSQLConnection : DSCPullServerConnection {
     }
 
     [string] ConnectionString () {
-        if ($this.Credential) {
+        if ($this.Credential -and $this.Database) {
             return 'Server={0};uid={1};pwd={2};Trusted_Connection=False;Database={3};' -f @(
                 $this.SQLServer,
                 $this.Credential.UserName,
                 $this.Credential.GetNetworkCredential().Password,
                 $this.Database
             )
-        } else {
+        } elseif (($null -eq $this.Credential) -and $this.Database) {
             return 'Server={0};Integrated Security=True;Database={1};' -f @(
                 $this.SQLServer,
                 $this.Database
+            )
+        } elseif ($this.Credential -and -not $this.Database) {
+            return 'Server={0};uid={1};pwd={2};Trusted_Connection=False;' -f @(
+                $this.SQLServer,
+                $this.Credential.UserName,
+                $this.Credential.GetNetworkCredential().Password
+            )
+        } else {
+            return 'Server={0};Integrated Security=True;' -f @(
+                $this.SQLServer
             )
         }
     }
@@ -423,6 +433,7 @@ class DSCPullServerESEConnection : DSCPullServerConnection {
 
 #region table Get functions
 function Get-DSCPullServerAdminDevice {
+    [OutputType([DSCDevice])]
     [CmdletBinding(DefaultParameterSetName = 'Connection')]
     param (
         [Parameter()]
@@ -504,6 +515,7 @@ function Get-DSCPullServerAdminDevice {
 }
 
 function Get-DSCPullServerAdminRegistration {
+    [OutputType([DSCNodeRegistration])]
     [CmdletBinding(DefaultParameterSetName = 'Connection')]
     param (
         [Parameter()]
@@ -585,14 +597,13 @@ function Get-DSCPullServerAdminRegistration {
 }
 
 function Get-DSCPullServerAdminStatusReport {
+    [OutputType([DSCNodeStatusReport])]
     [CmdletBinding(DefaultParameterSetName = 'Connection')]
     param (
-        # Disabled pipeline binding because ese single session issue
-        [Parameter(<#ValueFromPipelineByPropertyName#>)]
+        [Parameter()]
         [guid] $AgentId,
 
-        # Disabled pipeline binding because ese single session issue
-        [Parameter(<#ValueFromPipelineByPropertyName#>)]
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [Alias('Name')]
         [string] $NodeName,
@@ -1508,37 +1519,49 @@ function Copy-DSCPullServerAdminDataESEToSQL {
     }
 }
 
-<#
+# TODO: Finish this one!!!
 function New-DSCPullServerAdminSQLDatabase {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
-        [string]
-        $SQLServer,
+        [Parameter(Mandatory, ParameterSetName = 'SQL')]
+        [ValidateNotNullOrEmpty()]
+        [Alias('SQLInstance')]
+        [string] $SQLServer,
 
-        [Parameter()]
-        [pscredential]
-        $SQLCredential,
+        [Parameter(ParameterSetName = 'SQL')]
+        [pscredential] $Credential,
 
         [Parameter(Mandatory)]
-        [string]
-        $DBFolderPath
+        [ValidateNotNullOrEmpty()]
+        [Alias('Database')]
+        [string] $Name
     )
 
-    begin {
-        $Script = Get-Content $PSScriptRoot\SQLScripts\CreateDB.sql -Raw
-        $Script = $Script -replace '{0}\', $DBFolderPath.TrimEnd("\")
+    $connection = [DSCPullServerSQLConnection]::new($SQLServer)
+    if ($PSBoundParameters.ContainsKey('Credential')) {
+        $connection.Credential = $Credential
     }
 
-    process {
-        Invoke-DSCPullServerSQLCommand @PSBoundParameters -CommandType Set -Script $Script
+    $dbExists = Test-DSCPullServerDatabaseExist @PSBoundParameters -ErrorAction Stop
+    if ($dbExists) {
+        Write-Warning -Message "Database $Name on $SQLServer already exists"
+    } else {
+        @(
+            ("CREATE DATABASE {0}"-f $Name),
+            ("USE {0} CREATE TABLE [dbo].[Devices] ([TargetName] VARCHAR (255) NOT NULL,[ConfigurationID] VARCHAR (255) NOT NULL,[ServerCheckSum] VARCHAR (255) NOT NULL,[TargetCheckSum] VARCHAR (255) NOT NULL,[NodeCompliant] BIT DEFAULT ((0)) NOT NULL,[LastComplianceTime] DATETIME NULL,[LastHeartbeatTime] DATETIME NULL,[Dirty] BIT DEFAULT ((1)) NULL,[StatusCode] INT DEFAULT ((-1)) NULL);" -f $Name),
+            ("USE {0} CREATE TABLE [dbo].[RegistrationData] ([AgentId] VARCHAR (MAX) NOT NULL,[LCMVersion] VARCHAR (255) NULL,[NodeName] VARCHAR (255) NULL,[IPAddress] VARCHAR (255) NULL,[ConfigurationNames] VARCHAR (MAX) NULL);" -f $Name),
+            ("USE {0} CREATE TABLE [dbo].[StatusReport] ([JobId] VARCHAR (255) NOT NULL,[Id] VARCHAR (255) NOT NULL,[OperationType] VARCHAR (255) NULL,[RefreshMode] VARCHAR (255) NULL,[Status] VARCHAR (255) NULL,[LCMVersion] VARCHAR (255) NULL,[ReportFormatVersion] VARCHAR (255) NULL,[ConfigurationVersion] VARCHAR (255) NULL,[NodeName] VARCHAR (255) NULL,[IPAddress] VARCHAR (255) NULL,[StartTime] DATETIME DEFAULT (getdate()) NULL,[EndTime] DATETIME DEFAULT (getdate()) NULL,[Errors] VARCHAR (MAX) NULL,[StatusData] VARCHAR (MAX) NULL,[RebootRequested] VARCHAR (255) NULL,[AdditionalData]VARCHAR (MAX) NULL);" -f $Name)
+        ) | ForEach-Object -Process {
+            Invoke-DSCPullServerSQLCommand -Connection $connection -CommandType Set -Script $_
+        }
     }
 }
-#>
 #endregion
 
 #region connection functions
 function New-DSCPullServerAdminConnection {
+    [OutputType([DSCPullServerSQLConnection])]
+    [OutputType([DSCPullServerESEConnection])]
     [CmdletBinding(DefaultParameterSetName = 'SQL')]
     param (
         [Parameter(Mandatory, ParameterSetName = 'ESE')]
@@ -1596,6 +1619,8 @@ function New-DSCPullServerAdminConnection {
 }
 
 function Get-DSCPullServerAdminConnection {
+    [OutputType([DSCPullServerSQLConnection])]
+    [OutputType([DSCPullServerESEConnection])]
     [CmdletBinding()]
     param (
         [Parameter()]
@@ -2267,6 +2292,32 @@ function PreProc {
             New-DSCPullServerAdminConnection @newESEArgs
         }
     }
+}
+
+function Test-DSCPullServerDatabaseExist {
+    [OutputType([bool])]
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory, ParameterSetName = 'SQL')]
+        [ValidateNotNullOrEmpty()]
+        [string] $SQLServer,
+
+        [Parameter(ParameterSetName = 'SQL')]
+        [pscredential] $Credential,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [Alias('Database')]
+        [string] $Name
+    )
+    $connection = [DSCPullServerSQLConnection]::new($SQLServer)
+    if ($PSBoundParameters.ContainsKey('Credential')) {
+        $connection.Credential = $Credential
+    }
+
+    $testDBQuery = "DECLARE @dbname nvarchar(128) SET @dbname = N'{0}' IF (EXISTS (SELECT name FROM master.dbo.sysdatabases WHERE ('[' + name + ']' = @dbname OR name = @dbname))) SELECT CAST(1 AS bit) ELSE SELECT CAST(0 AS bit)" -f $Name
+    $testResult = Invoke-DSCPullServerSQLCommand -Connection $connection -CommandType Get -Script $testDBQuery
+    $testResult.GetBoolean(0)
 }
 #endregion
 

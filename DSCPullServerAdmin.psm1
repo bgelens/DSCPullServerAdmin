@@ -1516,7 +1516,7 @@ function Copy-DSCPullServerAdminDataESEToSQL {
 }
 
 function New-DSCPullServerAdminSQLDatabase {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory, ParameterSetName = 'SQL')]
         [ValidateNotNullOrEmpty()]
@@ -1547,7 +1547,9 @@ function New-DSCPullServerAdminSQLDatabase {
             ("USE {0} CREATE TABLE [dbo].[RegistrationData] ([AgentId] VARCHAR (MAX) NOT NULL,[LCMVersion] VARCHAR (255) NULL,[NodeName] VARCHAR (255) NULL,[IPAddress] VARCHAR (255) NULL,[ConfigurationNames] VARCHAR (MAX) NULL);" -f $Name),
             ("USE {0} CREATE TABLE [dbo].[StatusReport] ([JobId] VARCHAR (255) NOT NULL,[Id] VARCHAR (255) NOT NULL,[OperationType] VARCHAR (255) NULL,[RefreshMode] VARCHAR (255) NULL,[Status] VARCHAR (255) NULL,[LCMVersion] VARCHAR (255) NULL,[ReportFormatVersion] VARCHAR (255) NULL,[ConfigurationVersion] VARCHAR (255) NULL,[NodeName] VARCHAR (255) NULL,[IPAddress] VARCHAR (255) NULL,[StartTime] DATETIME DEFAULT (getdate()) NULL,[EndTime] DATETIME DEFAULT (getdate()) NULL,[Errors] VARCHAR (MAX) NULL,[StatusData] VARCHAR (MAX) NULL,[RebootRequested] VARCHAR (255) NULL,[AdditionalData]VARCHAR (MAX) NULL);" -f $Name)
         ) | ForEach-Object -Process {
-            Invoke-DSCPullServerSQLCommand -Connection $connection -CommandType Set -Script $_
+            if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$Name", $_)) {
+                Invoke-DSCPullServerSQLCommand -Connection $connection -CommandType Set -Script $_
+            }
         }
     }
 }
@@ -2306,7 +2308,10 @@ function Test-DSCPullServerDatabaseExist {
         [string] $Name,
 
         [Parameter(ParameterSetName = 'Connection')]
-        [DSCPullServerSQLConnection] $Connection
+        [DSCPullServerSQLConnection] $Connection,
+
+        [Parameter(ValueFromRemainingArguments)]
+        $DroppedParams
     )
     if ($PSCmdlet.ParameterSetName -eq 'SQL') {
         $testConnection = [DSCPullServerSQLConnection]::new($SQLServer)

@@ -27,7 +27,7 @@ Task Copy_Source_To_Module_BuildOutput {
     }
     $BuiltModuleFolder = [io.Path]::Combine($BuildOutput,$ProjectName)
     "Copying $BuildRoot\$SourceFolder To $BuiltModuleFolder\"
-    Copy-Item -Path "$BuildRoot\$SourceFolder" -Destination "$BuiltModuleFolder\" -Recurse -Force -Exclude '*.bak'
+    Copy-Item -Path "$BuildRoot\$SourceFolder" -Destination "$BuiltModuleFolder\" -Recurse -Force -Exclude '*.bak','wip*'
 }
 
 # Synopsis: Merging the PS1 files into the PSM1.

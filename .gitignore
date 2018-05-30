@@ -4,5 +4,6 @@ modules/*
 .kitchen/*
 **.bak
 .kitchen.local.yml
+DSCPullServerAdmin/*/wip*
 
 !**/README.md

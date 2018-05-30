@@ -52,6 +52,9 @@ function New-DSCPullServerAdminConnection {
             $connection.Index = $lastIndex + 1
             $connection.Active = $false
         }
+        if($null -eq $script:DSCPullServerConnections) {
+            $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
+        }
         [void] $script:DSCPullServerConnections.Add($connection)
     }
     $connection

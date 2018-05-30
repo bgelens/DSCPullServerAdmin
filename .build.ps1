@@ -64,7 +64,7 @@ Process {
             Clean_Empty_Folders_from_Build_Output,
             Update_Module_Manifest,
             Run_Unit_Tests,
-            Upload_Unit_Test_Results_To_AppVeyor,
+            #Upload_Unit_Test_Results_To_AppVeyor,
             Fail_Build_if_Unit_Test_Failed, 
             Fail_if_Last_Code_Converage_is_Under_Threshold,
             IntegrationTests,

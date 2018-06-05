@@ -9,10 +9,10 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = 'DSCPullServerAdmin.dll'
+RootModule = 'DSCPullServerAdmin.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.6'
+ModuleVersion = '0.0.1.0'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -27,7 +27,7 @@ Author = 'Ben Gelens'
 # CompanyName = 'Unknown'
 
 # Copyright statement for this module
-Copyright = '(c) 2017 Ben Gelens. All rights reserved.'
+Copyright = '(c) 2018 Ben Gelens. All rights reserved.'
 
 # Description of the functionality provided by this module
 Description = 'Get data from your DSC Pull Server database'
@@ -54,7 +54,7 @@ Description = 'Get data from your DSC Pull Server database'
 # RequiredModules = @()
 
 # Assemblies that must be loaded prior to importing this module
-# RequiredAssemblies = @()
+RequiredAssemblies = @('Microsoft.Isam.Esent.Interop')
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
 # ScriptsToProcess = @()
@@ -68,19 +68,29 @@ Description = 'Get data from your DSC Pull Server database'
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
 # NestedModules = @()
 
-# Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-# FunctionsToExport = '*'
-
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = @(
-    'Get-DSCPullServerAdminDevice', 
-    'Get-DSCPullServerAdminRegistration', 
-    'Get-DSCPullServerAdminReport',
-    'Mount-DSCPullServerAdminDatabase',
-    'Dismount-DSCPullServerAdminDataBase',
-    'Remove-DSCPullServerAdminReport',
+# CmdletsToExport = '*'
+
+# Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
+FunctionsToExport = @(
+    'Get-DSCPullServerAdminConnection',
+    'Get-DSCPullServerAdminDevice',
+    'Get-DSCPullServerAdminRegistration',
+    'Get-DSCPullServerAdminStatusReport',
+    'New-DSCPullServerAdminConnection',
+    'New-DSCPullServerAdminDevice',
+    'New-DSCPullServerAdminRegistration',
+    'New-DSCPullServerAdminStatusReport',
+    'Remove-DSCPullServerAdminConnection',
+    'Remove-DSCPullServerAdminDevice',
+    'Remove-DSCPullServerAdminRegistration',
+    'Remove-DSCPullServerAdminStatusReport',
+    'Set-DSCPullServerAdminConnectionActive',
+    'Set-DSCPullServerAdminDevice',
     'Set-DSCPullServerAdminRegistration',
-    'Remove-DSCPullServerAdminRegistration'
+    'Set-DSCPullServerAdminStatusReport',
+    'Copy-DSCPullServerAdminDataESEToSQL',
+    'New-DSCPullServerAdminSQLDatabase'
 )
 
 # Variables to export from this module
@@ -116,7 +126,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = 'Added new cmdlets Set-DSCPullServerAdminRegistration and Remove-DSCPullServerAdminRegistration contributed by @rdbartram'
+        ReleaseNotes = 'Moved ESENT code to native PowerShell script. Added SQL Database support. Added migration support. New functions.'
 
     } # End of PSData hashtable
 

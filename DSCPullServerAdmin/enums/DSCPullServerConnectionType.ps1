@@ -1,0 +1,4 @@
+enum DSCPullServerConnectionType {
+    SQL
+    ESE
+}

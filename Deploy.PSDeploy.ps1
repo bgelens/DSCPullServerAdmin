@@ -12,7 +12,10 @@ if (
         $Env:CommitMessage -match '!Deploy'
     ) {
         $manifest = Import-PowerShellDataFile -Path ".\$Env:ProjectName\$Env:ProjectName.psd1"
-        $manifest.RequiredModules|ForEach-Object {
+        $manifest.RequiredModules | ForEach-Object {
+            if ([string]::IsNullOrEmpty($_)) {
+                return
+            }
             $ReqModuleName = ([Microsoft.PowerShell.Commands.ModuleSpecification]$_).Name
             $InstallModuleParams = @{Name = $ReqModuleName}
             if ($ReqModuleVersion = ([Microsoft.PowerShell.Commands.ModuleSpecification]$_).RequiredVersion) {

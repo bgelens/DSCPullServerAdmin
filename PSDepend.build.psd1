@@ -11,7 +11,7 @@
     invokeBuild = 'latest'
     pester = 'latest'
     PSScriptAnalyzer = 'latest'
-    #PlatyPS = 'latest'
+    PlatyPS = 'latest'
     psdeploy = 'latest'
 
     #required for DSC authoring

@@ -5,3 +5,7 @@ build: false
 
 build_script:
   - ps: . .\.build.ps1 -ResolveDependency
+
+environment:
+  NuGetApiKey:
+    secure: lwF9LdoE9z5NFxxZB0yh6g0Ly4gFWfRwftRLqCRNuSdRXjpi10uvRynwm4A2tiI7

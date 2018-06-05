@@ -10,7 +10,15 @@
     
     [string]
     $ModuleVersion = (property ModuleVersion $(
-        if($ModuleVersion = Get-NextPSGalleryVersion -Name $ProjectName -ea 0) { $ModuleVersion } else { '0.0.1' }
+        if($resolvedModuleVersion = Get-NextNugetPackageVersion -Name $ProjectName -ErrorAction SilentlyContinue) {
+            if ($resolvedModuleVersion -gt [version]'0.1.0') {
+                $resolvedModuleVersion
+            } else {
+                '0.1.0'
+            }
+        } else {
+            '0.1.0'
+        }
         )),
 
     $MergeList = (property MergeList @('enum*','class*','priv*','pub*') ),

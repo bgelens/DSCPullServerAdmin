@@ -1,22 +1,17 @@
-[cmdletBinding()]
-Param (
+[CmdletBinding()]
+param (
     [Parameter(Position=0)]
     $Tasks,
 
-    [switch]
-    $ResolveDependency,
+    [switch] $ResolveDependency,
 
-    [String]
-    $BuildOutput = "BuildOutput",
+    [string] $BuildOutput = "BuildOutput",
 
-    [String[]]
-    $GalleryRepository,
+    [string[]] $GalleryRepository,
 
-    [Uri]
-    $GalleryProxy,
+    [uri] $GalleryProxy,
 
-    [Switch]
-    $ForceEnvironmentVariables = [switch]$true,
+    [switch] $ForceEnvironmentVariables = [switch]$true,
 
     $MergeList = @('enum*',[PSCustomObject]@{Name='class*';order={(Import-PowerShellDataFile -EA 0 .\*\Classes\classes.psd1).order.indexOf($_.BaseName)}},'priv*','pub*')
     
@@ -32,7 +27,7 @@ Param (
         ''
     }
 
-    ,$CodeCoverageThreshold = 0
+    ,$CodeCoverageThreshold = 65
 )
 
 Process {
@@ -64,9 +59,10 @@ Process {
             Clean_Empty_Folders_from_Build_Output,
             Update_Module_Manifest,
             Run_Unit_Tests,
-            #Upload_Unit_Test_Results_To_AppVeyor,
+            Upload_Unit_Test_Results_To_AppVeyor,
+            Upload_Unit_Test_Results_To_CodeCov,
             Fail_Build_if_Unit_Test_Failed, 
-            Fail_if_Last_Code_Converage_is_Under_Threshold,
+            Fail_if_Last_Code_Coverage_is_Under_Threshold,
             IntegrationTests,
             Deploy_with_PSDeploy
 

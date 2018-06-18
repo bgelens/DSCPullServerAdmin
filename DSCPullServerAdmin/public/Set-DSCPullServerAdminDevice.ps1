@@ -9,8 +9,7 @@ function Set-DSCPullServerAdminDevice {
         [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_SQL')]
         [DSCDevice] $InputObject,
 
-        [Parameter(Mandatory, ParameterSetName = 'Manual_Connection')]
-        [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
+        [Parameter()]
         [guid] $ConfigurationID,
 
         [Parameter(Mandatory, ParameterSetName = 'Manual_Connection')]

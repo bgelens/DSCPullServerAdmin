@@ -1,15 +1,11 @@
-﻿Param (
-    [string]
-    $ProjectName = (property ProjectName (Split-Path -Leaf $BuildRoot) ),
+﻿param (
+    [string] $ProjectName = (property ProjectName (Split-Path -Leaf $BuildRoot) ),
 
-    [string]
-    $SourceFolder = $ProjectName,
+    [string] $SourceFolder = $ProjectName,
 
-    [string]
-    $BuildOutput = (property BuildOutput 'C:\BuildOutput'),
+    [string] $BuildOutput = (property BuildOutput 'C:\BuildOutput'),
     
-    [string]
-    $ModuleVersion = (property ModuleVersion $(
+    [string] $ModuleVersion = (property ModuleVersion $(
         if($resolvedModuleVersion = Get-NextNugetPackageVersion -Name $ProjectName -ErrorAction SilentlyContinue) {
             if ($resolvedModuleVersion -gt [version]'0.1.0') {
                 $resolvedModuleVersion
@@ -23,8 +19,7 @@
 
     $MergeList = (property MergeList @('enum*','class*','priv*','pub*') ),
     
-    [string]
-    $LineSeparation = (property LineSeparation ('-' * 78))
+    [string] $LineSeparation = (property LineSeparation ('-' * 78))
 
 )
 
@@ -41,7 +36,16 @@ Task Copy_Source_To_Module_BuildOutput {
 # Synopsis: Merging the PS1 files into the PSM1.
 Task Merge_Source_Files_To_PSM1 {
     if(!$MergeList) {$MergeList = @('enum*','class*','priv*','pub*') }
-    "`tORDER: [$($MergeList -join ', ')]`r`n"
+
+    $mergePrint = $MergeList.ForEach{
+        if ($_ | Get-Member -MemberType NoteProperty -Name Name){
+            $_.Name
+        } else {
+            $_
+        }
+    } -join ', '
+
+    "`tORDER: [$($mergePrint -join ', ')]`r`n"
 
     if (![io.path]::IsPathRooted($BuildOutput)) {
         $BuildOutput = Join-Path -Path $BuildRoot -ChildPath $BuildOutput

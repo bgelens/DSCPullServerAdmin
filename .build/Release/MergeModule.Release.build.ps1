@@ -30,7 +30,12 @@ Task Copy_Source_To_Module_BuildOutput {
     }
     $BuiltModuleFolder = [io.Path]::Combine($BuildOutput,$ProjectName)
     "Copying $BuildRoot\$SourceFolder To $BuiltModuleFolder\"
-    Copy-Item -Path "$BuildRoot\$SourceFolder" -Destination "$BuiltModuleFolder\" -Recurse -Force -Exclude '*.bak','wip*'
+    'enums', 'classes', 'private', 'public' | ForEach-Object -Process {
+        Get-Item -Path "$BuildRoot\$SourceFolder\$_" |
+            Copy-Item -Destination "$BuiltModuleFolder\$_" -Recurse -Force -Exclude '*.bak','wip*'
+    }
+    Get-Item -Path "$BuildRoot\$SourceFolder\*.psd1" |
+        Copy-Item -Destination "$BuiltModuleFolder\" -Force
 }
 
 # Synopsis: Merging the PS1 files into the PSM1.
@@ -59,17 +64,18 @@ Task Merge_Source_Files_To_PSM1 {
 }
 
 # Synopsis: Removing Empty folders from the Module Build output
-Task Clean_Empty_Folders_from_Build_Output {
+Task Clean_Folders_from_Build_Output {
 
     if (![io.path]::IsPathRooted($BuildOutput)) {
         $BuildOutput = Join-Path -Path $BuildRoot -ChildPath $BuildOutput
     }
 
-    Get-ChildItem $BuildOutput -Recurse -Force | Sort-Object -Property FullName -Descending | Where-Object {
+    $BuiltModuleFolder = [io.Path]::Combine($BuildOutput,$ProjectName)
+
+    Get-ChildItem -Path $BuiltModuleFolder -Recurse -Force | Sort-Object -Property FullName -Descending | Where-Object {
         $_.PSIsContainer -and
-        $_.GetFiles().count -eq 0 -and
         $_.GetDirectories().Count -eq 0 
-    } | Remove-Item
+    } | Remove-Item -Recurse -Force
 }
 
 # Synopsis: Update the Module Manifest with the $ModuleVersion and setting the module functions

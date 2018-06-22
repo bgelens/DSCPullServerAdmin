@@ -53,17 +53,17 @@ Process {
     # Defining the Default task 'workflow' when invoked without -tasks parameter
     task .  Clean,
             Set_Build_Environment_Variables,
-            #Pester_Quality_Tests_Stop_On_Fail,
+            Pester_Quality_Tests_Stop_On_Fail,
             Copy_Source_To_Module_BuildOutput,
             Merge_Source_Files_To_PSM1,
-            Clean_Empty_Folders_from_Build_Output,
+            Clean_Folders_from_Build_Output,
             Update_Module_Manifest,
             Run_Unit_Tests,
             Upload_Unit_Test_Results_To_AppVeyor,
             Upload_Unit_Test_Results_To_CodeCov,
             Fail_Build_if_Unit_Test_Failed, 
             Fail_if_Last_Code_Coverage_is_Under_Threshold,
-            IntegrationTests,
+            #IntegrationTests,
             Deploy_with_PSDeploy
 
     # Define a testAll tasks for interactive testing

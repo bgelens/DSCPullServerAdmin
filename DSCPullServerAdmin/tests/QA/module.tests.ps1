@@ -43,14 +43,14 @@ $classes = Get-ChildItem -Path "$modulePath\classes\*.ps1" | ForEach-Object -Pro
     }
 }
 
-$privateFunctions = Get-ChildItem -Path "$modulePath\private\*.ps1" | ForEach-Object -Process {
+$privateFunctions = Get-ChildItem -Path "$modulePath\private\*.ps1" -Exclude '*.bak','wip*' | ForEach-Object -Process {
     @{
         File = $_
         Base = $_.BaseName
     }
 }
 
-$publicFunctions = Get-ChildItem -Path "$modulePath\public\*.ps1" | ForEach-Object -Process {
+$publicFunctions = Get-ChildItem -Path "$modulePath\public\*.ps1" -Exclude '*.bak','wip*' | ForEach-Object -Process {
     @{
         File = $_
         Base = $_.BaseName
@@ -85,7 +85,8 @@ Describe 'Quality for functions'-Tags 'TestQuality' {
                 $File
             )
             foreach ($scriptAnalyzerRule in $scriptAnalyzerRules) {
-                $PSSAResult = (Invoke-ScriptAnalyzer -Path $File.FullName -IncludeRule $scriptAnalyzerRule)
+                $PSSAResult = (Invoke-ScriptAnalyzer -Path $File.FullName -IncludeRule $scriptAnalyzerRule) |
+                    Where-Object -FilterScript { $_.RuleName -ne 'TypeNotFound' } #BUG: Somehow this information rule cannot be suppressed / excluded
                 ($PSSAResult | Format-List | Out-String) | Should -BeNullOrEmpty
             }
         }

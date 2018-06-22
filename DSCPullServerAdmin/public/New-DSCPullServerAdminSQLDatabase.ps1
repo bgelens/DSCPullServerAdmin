@@ -1,5 +1,29 @@
+<#
+    .SYNOPSIS
+    Creates a DSC Pull Server SQL Database.
+
+    .DESCRIPTION
+    Normally, the DSC Pull Server database is created when the first
+    interaction with the Pull Server takes place. This function allows
+    for prestaging the database.
+
+    .PARAMETER SQLServer
+    Define the SQL Instance where the database should be created.
+
+    .PARAMETER Credential
+    Define the Credentials to be used with the SQL Server connection.
+
+    .PARAMETER Name
+    Define the Database name to create.
+
+    .EXAMPLE
+    New-DSCPullServerAdminSQLDatabase -SQLServer sqlserver\instance -Name dscdb
+#>
 function New-DSCPullServerAdminSQLDatabase {
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(
+        ConfirmImpact = 'High',
+        SupportsShouldProcess
+    )]
     param(
         [Parameter(Mandatory, ParameterSetName = 'SQL')]
         [ValidateNotNullOrEmpty()]

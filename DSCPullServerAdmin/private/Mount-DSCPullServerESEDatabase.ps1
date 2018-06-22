@@ -70,7 +70,7 @@ function Mount-DSCPullServerESEDatabase {
         $instanceName,
         [Microsoft.Isam.Esent.Interop.CreateInstanceGrbit]::None
     )
-    
+
 
     [void] [Microsoft.Isam.Esent.Interop.Api]::JetInit2(
         [ref]$jetInstance,

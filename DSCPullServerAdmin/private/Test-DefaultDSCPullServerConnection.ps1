@@ -1,4 +1,5 @@
 function Test-DefaultDSCPullServerConnection {
+    [OutputType([bool])]
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]

@@ -1,4 +1,5 @@
 function Get-DSCPullServerESEStatusReport {
+    [Diagnostics.CodeAnalysis.SuppressMessage('PSAvoidUsingEmptyCatchBlock', '')]
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -78,7 +79,7 @@ function Get-DSCPullServerESEStatusReport {
                         $tableId,
                         $column.Columnid
                     )
-                } elseif ($column.Name -eq 'IPAddress') { 
+                } elseif ($column.Name -eq 'IPAddress') {
                     $ipAddress = ([Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
                         $Connection.SessionId,
                         $tableId,
@@ -150,8 +151,9 @@ function Get-DSCPullServerESEStatusReport {
 
             $statusReport
         }
-    }
-    finally {
+    } catch {
+        Write-Error -ErrorRecord $_ -ErrorAction Stop
+    } finally {
         Dismount-DSCPullServerESEDatabase -Connection $Connection
     }
 }

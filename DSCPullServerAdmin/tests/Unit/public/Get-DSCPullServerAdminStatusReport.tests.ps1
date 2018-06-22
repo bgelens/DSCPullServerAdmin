@@ -1,0 +1,177 @@
+$here = $PSScriptRoot
+
+$modulePath = "$here\..\..\.."
+$moduleName = Split-Path -Path $modulePath -Leaf
+
+InModuleScope $moduleName {
+    $eseConnection = [DSCPullServerESEConnection]::new()
+    $eseConnection.Index = 0
+    $eseConnection.Active = $true
+
+    $sqlConnection = [DSCPullServerSQLConnection]::new()
+    $sqlConnection.Active = $true
+    $sqlConnection.Index = 1
+
+    Describe Get-DSCPullServerAdminStatusReport {
+        BeforeEach {
+            $script:DSCPullServerConnections = $null
+        }
+
+        It 'Should Call Get-DSCPullServerESEStatusReport when Connection passed is ESE' {
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            Mock -CommandName Get-DSCPullServerESEStatusReport
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Get-DSCPullServerAdminStatusReport -Connection $eseConnection
+
+            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+        }
+
+        It 'Should Call Get-DSCPullServerESEStatusReport when active Connection is ESE' {
+            $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
+            [void] $script:DSCPullServerConnections.Add($eseConnection)
+
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            Mock -CommandName Get-DSCPullServerESEStatusReport
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Get-DSCPullServerAdminStatusReport
+
+            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+        }
+
+        It 'Should Call Get-DSCPullServerESEStatusReport with filters when active Connection is ESE and filters specified' {
+            $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
+            [void] $script:DSCPullServerConnections.Add($eseConnection)
+
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            Mock -CommandName Get-DSCPullServerESEStatusReport -MockWith {
+                param (
+                    $AgentId,
+                    $NodeName,
+                    $JobId,
+                    $FromStartTime,
+                    $ToStartTime
+                )
+
+                [pscustomobject]@{
+                    AgentId = $AgentId
+                    NodeName = $NodeName
+                    JobId = $JobId
+                    FromStartTime = $FromStartTime
+                    ToStartTime = $ToStartTime
+                }
+            }
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            $result = Get-DSCPullServerAdminStatusReport `
+                -AgentId ([guid]::Empty) `
+                -NodeName 'bogusNode' `
+                -JobId ([guid]::Empty) `
+                -FromStartTime ([datetime]::MinValue) `
+                -ToStartTime ([datetime]::MaxValue)
+
+            $result.AgentId | Should -Be ([guid]::Empty)
+            $result.NodeName | Should -Be 'bogusNode'
+            $result.JobId | Should -Be ([guid]::Empty)
+            $result.FromStartTime | Should -Be ([datetime]::MinValue)
+            $result.ToStartTime | Should -Be ([datetime]::MaxValue)
+
+            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+        }
+
+        It 'Should Call Invoke-DSCPullServerSQLCommand when Connection passed is SQL' {
+            Mock -CommandName PreProc -MockWith {
+                $sqlConnection
+            }
+
+            Mock -CommandName Get-DSCPullServerESEStatusReport
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Get-DSCPullServerAdminStatusReport -Connection $sqlConnection
+
+            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should Call Invoke-DSCPullServerSQLCommand when active Connection is SQL' {
+            $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
+            [void] $script:DSCPullServerConnections.Add($sqlConnection)
+
+            Mock -CommandName PreProc -MockWith {
+                $sqlConnection
+            }
+
+            Mock -CommandName Get-DSCPullServerESEStatusReport
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Get-DSCPullServerAdminStatusReport
+
+            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should Call Invoke-DSCPullServerSQLCommand with filters when active Connection is SQL and filters specified' {
+            $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
+            [void] $script:DSCPullServerConnections.Add($sqlConnection)
+
+            Mock -CommandName PreProc -MockWith {
+                $sqlConnection
+            }
+
+            Mock -CommandName Get-DSCPullServerESEStatusReport
+            Mock -CommandName Invoke-DSCPullServerSQLCommand -MockWith {
+                param (
+                    $Script
+                )
+                Write-Verbose -Message $Script -Verbose
+            }
+
+            $result = Get-DSCPullServerAdminStatusReport `
+                -AgentId ([guid]::Empty) `
+                -NodeName 'bogusNode' `
+                -JobId ([guid]::Empty) `
+                -FromStartTime ([datetime]::MinValue) `
+                -ToStartTime ([datetime]::MaxValue) 4>&1
+            $result | Should -Be "SELECT * FROM StatusReport WHERE Id = '00000000-0000-0000-0000-000000000000' AND NodeName like 'bogusNode' AND StartTime >= '0001-01-01T00:00:00' AND StartTime <= '9999-12-31T23:59:59' AND JobId = '00000000-0000-0000-0000-000000000000'"
+
+            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should throw when Invoke-DSCPullServerSQLCommand result cannot be used to instantiate DSCNodeStatusReport object' {
+            $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
+            [void] $script:DSCPullServerConnections.Add($sqlConnection)
+
+            Mock -CommandName PreProc -MockWith {
+                $sqlConnection
+            }
+
+            Mock -CommandName Get-DSCPullServerESEStatusReport
+            Mock -CommandName Invoke-DSCPullServerSQLCommand -MockWith {
+                'invaliddata'
+            }
+
+            Mock -CommandName Write-Error
+
+            Get-DSCPullServerAdminStatusReport
+
+            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Write-Error -Exactly -Times 1 -Scope it
+        }
+    }
+}

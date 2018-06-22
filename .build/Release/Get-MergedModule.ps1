@@ -1,4 +1,5 @@
 function Get-MergedModule {
+    [CmdletBinding()]
     param(
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [String]$Name,

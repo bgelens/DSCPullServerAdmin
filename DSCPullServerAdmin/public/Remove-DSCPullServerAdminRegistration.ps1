@@ -1,3 +1,42 @@
+<#
+    .SYNOPSIS
+    Removes node registration entries (LCMv2) from a Pull Server Database.
+
+    .DESCRIPTION
+    LCMv2 (WMF5+ / PowerShell 5+) pull clients send information
+    to the Pull Server which stores their data in the registrationdata table.
+    This function will remove node registrations from the registrationdata table.
+
+    .PARAMETER InputObject
+    Pass in the registration object to be removed from the database.
+
+    .PARAMETER AgentId
+    Define the AgentId of the registration to be removed from the database.
+
+    .PARAMETER Connection
+    Accepts a specific Connection to be passed to target a specific database.
+    When not specified, the currently Active Connection from memory will be used
+    unless one off the parameters for ad-hoc connections (ESEFilePath, SQLServer)
+    is used in which case, an ad-hoc connection is created.
+
+    .PARAMETER ESEFilePath
+    Define the EDB file path to use an ad-hoc ESE connection.
+
+    .PARAMETER SQLServer
+    Define the SQL Instance to use in an ad-hoc SQL connection.
+
+    .PARAMETER Credential
+    Define the Credentials to use with an ad-hoc SQL connection.
+
+    .PARAMETER Database
+    Define the database to use with an ad-hoc SQL connection.
+
+    .EXAMPLE
+    Remove-DSCPullServerAdminRegistration -AgentId '80ee20f9-78df-480d-8175-9dd6cb09607a'
+
+    .EXAMPLE
+    Get-DSCPullServerAdminRegistration -TargetName '80ee20f9-78df-480d-8175-9dd6cb09607a' | Remove-DSCPullServerAdminRegistration
+#>
 function Remove-DSCPullServerAdminRegistration {
     [CmdletBinding(
         DefaultParameterSetName = 'InputObject_Connection',

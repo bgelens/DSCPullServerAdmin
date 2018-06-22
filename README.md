@@ -3,6 +3,7 @@
 master|dev|psgallery
 ------|---|---------
 [![Build status](https://ci.appveyor.com/api/projects/status/4xuee8cuu6p8bs9i/branch/master?svg=true)](https://ci.appveyor.com/project/bgelens/dscpullserveradmin/branch/master)|[![Build status](https://ci.appveyor.com/api/projects/status/4xuee8cuu6p8bs9i/branch/dev?svg=true)](https://ci.appveyor.com/project/bgelens/dscpullserveradmin/branch/dev)| [![PowerShell Gallery](https://img.shields.io/powershellgallery/v/dscpullserveradmin.svg)](https://www.powershellgallery.com/packages/dscpullserveradmin)
+[![codecov](https://codecov.io/gh/bgelens/DSCPullServerAdmin/branch/master/graph/badge.svg)](https://codecov.io/gh/bgelens/DSCPullServerAdmin/branch/master)|[![codecov](https://codecov.io/gh/bgelens/DSCPullServerAdmin/branch/dev/graph/badge.svg)](https://codecov.io/gh/bgelens/DSCPullServerAdmin/branch/dev)|
 
 A module to work with the DSC PullServer EDB (ESENT) and SQL database and provide a better Admin oriented Pull Server experience.
 

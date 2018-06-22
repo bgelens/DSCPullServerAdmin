@@ -1,9 +1,7 @@
-Param (
-    [string]
-    $ProjectName = (property ProjectName (Split-Path -Leaf $BuildRoot) ),
+param (
+    [string] $ProjectName = (property ProjectName (Split-Path -Leaf $BuildRoot) ),
 
-    [string]
-    $RelativePathToIntegrationTests = (property RelativePathToIntegrationTests 'tests/Integration')
+    [string] $RelativePathToIntegrationTests = (property RelativePathToIntegrationTests 'tests\Integration')
 )
 
 # Synopsis: Running the Integration tests if present
@@ -33,5 +31,4 @@ task IntegrationTests {
 
         Pop-Location
     }
-   
 }

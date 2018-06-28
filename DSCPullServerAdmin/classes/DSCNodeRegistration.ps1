@@ -38,6 +38,8 @@ class DSCNodeRegistration {
                 if ($_.Name -eq 'ConfigurationNames') {
                     if ($this.ConfigurationNames.Count -ge 1) {
                         "$($_.Name) = '[`"{0}`"]'" -f ($this."$($_.Name)" -join '","')
+                    } else {
+                        "$($_.Name) = '[]'"
                     }
                 } elseif ($_.Name -eq 'IPAddress') {
                     "$($_.Name) = '{0}'" -f ($this."$($_.Name)" -join ';')

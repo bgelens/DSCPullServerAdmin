@@ -27,7 +27,7 @@ param (
         ''
     }
 
-    ,$CodeCoverageThreshold = 65
+    ,$CodeCoverageThreshold = 70
 )
 
 Process {
@@ -68,6 +68,15 @@ Process {
 
     # Define a testAll tasks for interactive testing
     task testAll UnitTests, IntegrationTests, QualityTestsStopOnFail
+
+    # Just build so psm1 is availble to run unit tests
+    task onlyBuild Clean,
+                   Set_Build_Environment_Variables,
+                   Copy_Source_To_Module_BuildOutput,
+                   Merge_Source_Files_To_PSM1,
+                   Clean_Folders_from_Build_Output,
+                   Update_Module_Manifest
+
 
     # Define a dummy task when you don't want any task executed (e.g. Only load PSModulePath)
     task Noop {}

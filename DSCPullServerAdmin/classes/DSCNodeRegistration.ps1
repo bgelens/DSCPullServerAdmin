@@ -38,15 +38,13 @@ class DSCNodeRegistration {
                 if ($_.Name -eq 'ConfigurationNames') {
                     if ($this.ConfigurationNames.Count -ge 1) {
                         "$($_.Name) = '[`"{0}`"]'" -f ($this."$($_.Name)" -join '","')
+                    } else {
+                        "$($_.Name) = '[]'"
                     }
                 } elseif ($_.Name -eq 'IPAddress') {
                     "$($_.Name) = '{0}'" -f ($this."$($_.Name)" -join ';')
                 } else {
-                    if ($_.Definition.Split(' ')[0] -eq 'datetime') {
-                        "$($_.Name) = '{0}'" -f $this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss')
-                    } else {
-                        "$($_.Name) = '{0}'" -f $this."$($_.Name)"
-                    }
+                    "$($_.Name) = '{0}'" -f $this."$($_.Name)"
                 }
             } -join ','),
             $this.AgentId
@@ -67,11 +65,7 @@ class DSCNodeRegistration {
                 } elseif ($_.Name -eq 'IPAddress') {
                     "'{0}'" -f ($this."$($_.Name)" -join ';')
                 } else {
-                    if ($_.Definition.Split(' ')[0] -eq 'datetime') {
-                        "'{0}'" -f $this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss')
-                    } else {
-                        "'{0}'" -f $this."$($_.Name)"
-                    }
+                    "'{0}'" -f $this."$($_.Name)"
                 }
             } -join ',')
         ))

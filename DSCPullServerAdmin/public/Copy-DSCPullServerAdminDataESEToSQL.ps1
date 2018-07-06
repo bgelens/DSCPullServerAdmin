@@ -1,3 +1,33 @@
+<#
+    .SYNOPSIS
+    Copy data from EDB to SQL.
+
+    .DESCRIPTION
+    This function allows for data to be copied over from
+    an ESE (edb) connection to a SQL connection. This allows
+    a user to migrate over from an ESENT type Pull Server to
+    a SQL type Pull Server without loosing data.
+
+    .PARAMETER ESEConnection
+    A specifically passed in ESE connection to migrate data out of.
+
+    .PARAMETER SQLConnection
+    A specifically passed in SQL connection to migrate data in to.
+
+    .PARAMETER ObjectsToMigrate
+    Define the object types to migrate. Defaults to Devices and RegistrationData.
+
+    .PARAMETER Force
+    When specified, existing records in SQL will be overwritten. When not specified
+    existing data will not be overwritten and Warnings will be provided to inform
+    the user.
+
+    .EXAMPLE
+    $eseConnection = New-DSCPullServerAdminConnection -ESEFilePath C:\EDB\Devices.edb
+    $sqlConnection = New-DSCPullServerAdminSQLDatabase -SQLServer sqlserver\instance -Name dsc -Credential sa
+
+    Copy-DSCPullServerAdminDataESEToSQL -ObjectsToMigrate Devices, RegistrationData, StatusReports -Force
+#>
 function Copy-DSCPullServerAdminDataESEToSQL {
     [CmdletBinding(SupportsShouldProcess)]
     param(

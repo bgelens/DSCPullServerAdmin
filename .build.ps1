@@ -1,22 +1,17 @@
-[cmdletBinding()]
-Param (
+[CmdletBinding()]
+param (
     [Parameter(Position=0)]
     $Tasks,
 
-    [switch]
-    $ResolveDependency,
+    [switch] $ResolveDependency,
 
-    [String]
-    $BuildOutput = "BuildOutput",
+    [string] $BuildOutput = "BuildOutput",
 
-    [String[]]
-    $GalleryRepository,
+    [string[]] $GalleryRepository,
 
-    [Uri]
-    $GalleryProxy,
+    [uri] $GalleryProxy,
 
-    [Switch]
-    $ForceEnvironmentVariables = [switch]$true,
+    [switch] $ForceEnvironmentVariables = [switch]$true,
 
     $MergeList = @('enum*',[PSCustomObject]@{Name='class*';order={(Import-PowerShellDataFile -EA 0 .\*\Classes\classes.psd1).order.indexOf($_.BaseName)}},'priv*','pub*')
     
@@ -32,7 +27,7 @@ Param (
         ''
     }
 
-    ,$CodeCoverageThreshold = 0
+    ,$CodeCoverageThreshold = 70
 )
 
 Process {
@@ -58,20 +53,30 @@ Process {
     # Defining the Default task 'workflow' when invoked without -tasks parameter
     task .  Clean,
             Set_Build_Environment_Variables,
-            #Pester_Quality_Tests_Stop_On_Fail,
+            Pester_Quality_Tests_Stop_On_Fail,
             Copy_Source_To_Module_BuildOutput,
             Merge_Source_Files_To_PSM1,
-            Clean_Empty_Folders_from_Build_Output,
+            Clean_Folders_from_Build_Output,
             Update_Module_Manifest,
             Run_Unit_Tests,
-            #Upload_Unit_Test_Results_To_AppVeyor,
+            Upload_Unit_Test_Results_To_AppVeyor,
+            Upload_Unit_Test_Results_To_CodeCov,
             Fail_Build_if_Unit_Test_Failed, 
-            Fail_if_Last_Code_Converage_is_Under_Threshold,
-            IntegrationTests,
+            Fail_if_Last_Code_Coverage_is_Under_Threshold,
+            #IntegrationTests,
             Deploy_with_PSDeploy
 
     # Define a testAll tasks for interactive testing
     task testAll UnitTests, IntegrationTests, QualityTestsStopOnFail
+
+    # Just build so psm1 is availble to run unit tests
+    task onlyBuild Clean,
+                   Set_Build_Environment_Variables,
+                   Copy_Source_To_Module_BuildOutput,
+                   Merge_Source_Files_To_PSM1,
+                   Clean_Folders_from_Build_Output,
+                   Update_Module_Manifest
+
 
     # Define a dummy task when you don't want any task executed (e.g. Only load PSModulePath)
     task Noop {}

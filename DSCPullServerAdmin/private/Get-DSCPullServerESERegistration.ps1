@@ -65,8 +65,9 @@ function Get-DSCPullServerESERegistration {
 
             $nodeRegistration
         }
-    }
-    finally {
+    } catch {
+        Write-Error -ErrorRecord $_ -ErrorAction Stop
+    } finally {
         Dismount-DSCPullServerESEDatabase -Connection $Connection
     }
 }

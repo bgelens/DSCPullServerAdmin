@@ -1,3 +1,49 @@
+<#
+    .SYNOPSIS
+    Get status report entries (LCMv2) from a Pull Server Database.
+
+    .DESCRIPTION
+    LCMv2 (WMF5+ / PowerShell 5+) pull clients send reports
+    to the Pull Server which stores their data in the StatusReport table.
+    This function will return status reports from the StatusReport table
+    and allows for multiple types of filtering.
+
+    .PARAMETER AgentId
+    Return the reports with the specific AgentId.
+
+    .PARAMETER NodeName
+    Return the reports with the specific NodeName.
+
+    .PARAMETER JobId
+    Return the reports with the specific JobId (Key).
+
+    .PARAMETER FromStartTime
+    Return the reports which start from the specific FromStartTime.
+
+    .PARAMETER ToStartTime
+    Return the reports which start no later than the specific ToStartTime.
+
+    .PARAMETER Connection
+    Accepts a specific Connection to be passed to target a specific database.
+    When not specified, the currently Active Connection from memory will be used
+    unless one off the parameters for ad-hoc connections (ESEFilePath, SQLServer)
+    is used in which case, an ad-hoc connection is created.
+
+    .PARAMETER ESEFilePath
+    Define the EDB file path to use an ad-hoc ESE connection.
+
+    .PARAMETER SQLServer
+    Define the SQL Instance to use in an ad-hoc SQL connection.
+
+    .PARAMETER Credential
+    Define the Credentials to use with an ad-hoc SQL connection.
+
+    .PARAMETER Database
+    Define the database to use with an ad-hoc SQL connection.
+
+    .EXAMPLE
+    Get-DSCPullServerAdminStatusReport -JobId '80ee20f9-78df-480d-8175-9dd6cb09607a'
+#>
 function Get-DSCPullServerAdminStatusReport {
     [OutputType([DSCNodeStatusReport])]
     [CmdletBinding(DefaultParameterSetName = 'Connection')]

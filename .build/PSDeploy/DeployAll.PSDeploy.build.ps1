@@ -1,15 +1,11 @@
-Param (
-    [string]
-    $BuildOutput = (property BuildOutput 'BuildOutput'),
+param (
+    [string] $BuildOutput = (property BuildOutput 'BuildOutput'),
 
-    [string]
-    $ProjectName = (property ProjectName (Split-Path -Leaf $BuildRoot) ),
+    [string] $ProjectName = (property ProjectName (Split-Path -Leaf $BuildRoot) ),
 
-    [string]
-    $PesterOutputFormat = (property PesterOutputFormat 'NUnitXml'),
+    [string] $PesterOutputFormat = (property PesterOutputFormat 'NUnitXml'),
 
-    [string]
-    $APPVEYOR_JOB_ID = $(try {property APPVEYOR_JOB_ID} catch {}),
+    [string] $APPVEYOR_JOB_ID = $(try {property APPVEYOR_JOB_ID} catch {}),
 
     $DeploymentTags = $(try {property DeploymentTags} catch {}),
 
@@ -24,9 +20,9 @@ task Deploy_with_PSDeploy {
     }
 
     $DeployFile =  [io.path]::Combine($BuildRoot, $DeployConfig)
-    
+
     "Deploying Module based on $DeployConfig config"
-    
+
     $InvokePSDeployArgs = @{
         Path    = $DeployFile
         Force   = $true
@@ -35,7 +31,7 @@ task Deploy_with_PSDeploy {
     if($DeploymentTags) {
         $null = $InvokePSDeployArgs.Add('Tags',$DeploymentTags)
     }
-    
+
     Import-Module PSDeploy
     Invoke-PSDeploy @InvokePSDeployArgs
 }

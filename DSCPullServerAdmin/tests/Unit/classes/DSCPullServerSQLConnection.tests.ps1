@@ -51,13 +51,25 @@ InModuleScope $moduleName {
                     )
                     result = 'Server=bogusServer\instance;Integrated Security=True;Database=bogusDb;'
                     caseDescription = 'server, database'
-                }
-                ,
+                },
                 @{
                     object = [DSCPullServerSQLConnection]::new(
                         'bogusServer\instance'
                     )
                     result = 'Server=bogusServer\instance;Integrated Security=True;'
+                    caseDescription = 'server'
+                },
+                @{
+                    object = {
+                        $instanceNoDb = [DSCPullServerSQLConnection]::new()
+                        $instanceNoDb.SQLServer = 'bogusServer\instance'
+                        $instanceNoDb.Credential = [pscredential]::new(
+                            'sa',
+                            (ConvertTo-SecureString 'bogusPass' -AsPlainText -Force)
+                        )
+                        $instanceNoDb
+                    }.Invoke()
+                    result = 'Server=bogusServer\instance;uid=sa;pwd=bogusPass;Trusted_Connection=False;'
                     caseDescription = 'server'
                 }
             )

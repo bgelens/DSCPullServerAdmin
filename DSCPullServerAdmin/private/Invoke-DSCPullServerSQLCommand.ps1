@@ -12,6 +12,9 @@ function Invoke-DSCPullServerSQLCommand {
         [ValidateSet('Get', 'Set')]
         [string] $CommandType = 'Get',
 
+        [Parameter()]
+        [uint16] $CommandTimeOut = 30,
+
         [Parameter(ValueFromRemainingArguments, DontShow)]
         $DroppedParams
     )
@@ -27,6 +30,7 @@ function Invoke-DSCPullServerSQLCommand {
         try {
             $command = $sqlConnection.CreateCommand()
             $command.CommandText = $Script
+            $command.CommandTimeout = $CommandTimeOut
 
             Write-Verbose ("Invoking command: {0}" -f $Script)
 

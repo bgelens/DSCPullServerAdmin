@@ -30,7 +30,7 @@ Author = 'Ben Gelens'
 Copyright = '(c) 2018 Ben Gelens. All rights reserved.'
 
 # Description of the functionality provided by this module
-Description = 'Get data from your DSC Pull Server database'
+Description = 'Get, manipulate and migrate data from your DSC Pull Server database (EDB and SQL)'
 
 # Minimum version of the Windows PowerShell engine required by this module
 # PowerShellVersion = ''
@@ -126,7 +126,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = 'Moved ESENT code to native PowerShell script. Added SQL Database support. Added migration support. New functions.'
+        ReleaseNotes = 'Fixed bug where empty strings in the ipaddress fields where throwing errors when being parsed. Added Azure DB support to New-DSCPullServerAdminSQLDatabase.'
 
     } # End of PSData hashtable
 

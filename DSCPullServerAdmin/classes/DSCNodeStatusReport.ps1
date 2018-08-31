@@ -47,7 +47,11 @@ class DSCNodeStatusReport {
                     $data = ($Input[$i] | ConvertFrom-Json)
                 }
                 'IPAddress' {
-                    $data = ($Input[$i] -split ',') -split ';'
+                    $data = ($Input[$i] -split ',') -split ';' | ForEach-Object -Process {
+                        if ($_ -ne [string]::Empty) {
+                            $_
+                        }
+                    }
                 }
                 default {
                     $data = $Input[$i]

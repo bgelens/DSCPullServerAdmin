@@ -17,6 +17,11 @@ InModuleScope $moduleName {
                 $instance | Should -Not -BeNullOrEmpty
                 $instance.GetType().Name | Should -Be 'DSCPullServerESEConnection'
             }
+
+            It 'Should throw when invalid path is used' {
+                { [DSCPullServerESEConnection]::new('bogusPath') } |
+                    Should -Throw
+            }
         }
     }
 }

@@ -126,7 +126,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = 'Fixed bug where empty strings in the ipaddress fields where throwing errors when being parsed. Added Azure DB support to New-DSCPullServerAdminSQLDatabase.'
+        ReleaseNotes = 'Throw error when edb filepath specified is invalid.'
 
     } # End of PSData hashtable
 

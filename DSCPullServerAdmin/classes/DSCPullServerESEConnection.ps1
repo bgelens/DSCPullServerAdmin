@@ -7,6 +7,11 @@ class DSCPullServerESEConnection : DSCPullServerConnection {
     DSCPullServerESEConnection () : base([DSCPullServerConnectionType]::ESE) { }
 
     DSCPullServerESEConnection ([string]$Path) : base([DSCPullServerConnectionType]::ESE) {
-        $this.ESEFilePath = (Resolve-Path $Path).ProviderPath
+        $resolvedPath = Resolve-Path $Path -ErrorAction SilentlyContinue
+        if ($null -eq $resolvedPath) {
+            throw "File $Path is invalid"
+        } else {
+            $this.ESEFilePath = $resolvedPath.ProviderPath
+        }
     }
 }

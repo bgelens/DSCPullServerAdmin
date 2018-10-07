@@ -55,6 +55,6 @@ All data can be copied over.
 
 ## Class diagram
 
-This project is Powershell class based. Find here the Class diagram structure:
+This project is PowerShell class based. Find here the Class diagram structure:
 
 ![Diagram](/images/ClassDiagram.png)

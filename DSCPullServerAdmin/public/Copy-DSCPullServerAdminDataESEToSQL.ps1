@@ -37,9 +37,9 @@ function Copy-DSCPullServerAdminDataESEToSQL {
         [Parameter(Mandatory)]
         [DSCPullServerSQLConnection] $SQLConnection,
 
-        [Parameter()]
+        [Parameter(Mandatory)]
         [ValidateSet('Devices', 'RegistrationData', 'StatusReports')]
-        [string[]] $ObjectsToMigrate = @('Devices', 'RegistrationData'),
+        [string[]] $ObjectsToMigrate,
 
         [Parameter()]
         [switch] $Force

@@ -15,21 +15,22 @@ Get status report entries (LCMv2) from a Pull Server Database.
 ### Connection (Default)
 ```
 Get-DSCPullServerAdminStatusReport [-AgentId <Guid>] [-NodeName <String>] [-JobId <Guid>]
- [-FromStartTime <DateTime>] [-ToStartTime <DateTime>] [-Connection <DSCPullServerConnection>]
- [<CommonParameters>]
+ [-FromStartTime <DateTime>] [-ToStartTime <DateTime>] [-All] [-Top <UInt16>] [-OperationType <String>]
+ [-Connection <DSCPullServerConnection>] [<CommonParameters>]
 ```
 
 ### ESE
 ```
 Get-DSCPullServerAdminStatusReport [-AgentId <Guid>] [-NodeName <String>] [-JobId <Guid>]
- [-FromStartTime <DateTime>] [-ToStartTime <DateTime>] -ESEFilePath <String> [<CommonParameters>]
+ [-FromStartTime <DateTime>] [-ToStartTime <DateTime>] [-All] [-Top <UInt16>] [-OperationType <String>]
+ -ESEFilePath <String> [<CommonParameters>]
 ```
 
 ### SQL
 ```
 Get-DSCPullServerAdminStatusReport [-AgentId <Guid>] [-NodeName <String>] [-JobId <Guid>]
- [-FromStartTime <DateTime>] [-ToStartTime <DateTime>] -SQLServer <String> [-Credential <PSCredential>]
- [-Database <String>] [<CommonParameters>]
+ [-FromStartTime <DateTime>] [-ToStartTime <DateTime>] [-All] [-Top <UInt16>] [-OperationType <String>]
+ -SQLServer <String> [-Credential <PSCredential>] [-Database <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -122,6 +123,49 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -All
+Return all reports that correspond to specified filters (overwrites Top parameter).
+SQL Only.```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Top
+Return number of reports that correspond to specified filters.
+SQL Only.```yaml
+Type: UInt16
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: 5
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -OperationType
+{{Fill OperationType Description}}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: All
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -Connection
 Accepts a specific Connection to be passed to target a specific database.
 When not specified, the currently Active Connection from memory will be used
@@ -201,8 +245,7 @@ Accept wildcard characters: False
 ```
 
 ### CommonParameters
-This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable.
-For more information, see about_CommonParameters (http://go.microsoft.com/fwlink/?LinkID=113216).
+This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see about_CommonParameters (http://go.microsoft.com/fwlink/?LinkID=113216).
 
 ## INPUTS
 

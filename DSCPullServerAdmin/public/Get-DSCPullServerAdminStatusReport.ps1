@@ -31,6 +31,9 @@
     Return number of reports that correspond to specified filters.
     SQL Only.
 
+    .PARAMETER OperationType
+    Return the reports which have the specified OperationType.
+
     .PARAMETER Connection
     Accepts a specific Connection to be passed to target a specific database.
     When not specified, the currently Active Connection from memory will be used

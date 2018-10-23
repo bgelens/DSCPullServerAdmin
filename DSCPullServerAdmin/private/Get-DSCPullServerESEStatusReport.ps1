@@ -21,7 +21,11 @@ function Get-DSCPullServerESEStatusReport {
         [datetime] $ToStartTime,
 
         [Parameter()]
-        [guid] $JobId
+        [guid] $JobId,
+
+        [Parameter()]
+        [ValidateSet('All', 'LocalConfigurationManager', 'Consistency', 'Initial')]
+        [string] $OperationType = 'All'
     )
     $table = 'StatusReport'
     [Microsoft.Isam.Esent.Interop.JET_TABLEID] $tableId = [Microsoft.Isam.Esent.Interop.JET_TABLEID]::Nil
@@ -146,6 +150,10 @@ function Get-DSCPullServerESEStatusReport {
             }
 
             if ($PSBoundParameters.ContainsKey('JobId') -and $statusReport.JobId -ne $JobId) {
+                continue
+            }
+
+            if ($OperationType -ne 'All' -and $statusReport.OperationType -ne $OperationType) {
                 continue
             }
 

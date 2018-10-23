@@ -81,7 +81,7 @@ InModuleScope $moduleName {
                 -NodeName 'bogusNode' `
                 -JobId ([guid]::Empty) `
                 -FromStartTime ([datetime]::MinValue) `
-                -ToStartTime ([datetime]::MaxValue)
+                -ToStartTime ([datetime]::MaxValue) 
 
             $result.AgentId | Should -Be ([guid]::Empty)
             $result.NodeName | Should -Be 'bogusNode'
@@ -124,7 +124,7 @@ InModuleScope $moduleName {
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
         }
 
-        It 'Should Call Invoke-DSCPullServerSQLCommand with filters when active Connection is SQL and filters specified' {
+        It 'Should Call Invoke-DSCPullServerSQLCommand with filters when active Connection is SQL and filters specified without All switch' {
             $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
             [void] $script:DSCPullServerConnections.Add($sqlConnection)
 
@@ -145,7 +145,39 @@ InModuleScope $moduleName {
                 -NodeName 'bogusNode' `
                 -JobId ([guid]::Empty) `
                 -FromStartTime ([datetime]::MinValue) `
-                -ToStartTime ([datetime]::MaxValue) 4>&1
+                -ToStartTime ([datetime]::MaxValue) `
+                -OperationType 'Consistency' 4>&1
+
+            $result | Should -Be "SELECT TOP(5) * FROM StatusReport WHERE Id = '00000000-0000-0000-0000-000000000000' AND NodeName like 'bogusNode' AND StartTime >= '0001-01-01T00:00:00' AND StartTime <= '9999-12-31T23:59:59' AND JobId = '00000000-0000-0000-0000-000000000000' AND OperationType = 'Consistency'"
+
+            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should Call Invoke-DSCPullServerSQLCommand with filters when active Connection is SQL and filters specified with All switch' {
+            $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
+            [void] $script:DSCPullServerConnections.Add($sqlConnection)
+
+            Mock -CommandName PreProc -MockWith {
+                $sqlConnection
+            }
+
+            Mock -CommandName Get-DSCPullServerESEStatusReport
+            Mock -CommandName Invoke-DSCPullServerSQLCommand -MockWith {
+                param (
+                    $Script
+                )
+                Write-Verbose -Message $Script -Verbose
+            }
+
+            $result = Get-DSCPullServerAdminStatusReport `
+                -AgentId ([guid]::Empty) `
+                -NodeName 'bogusNode' `
+                -JobId ([guid]::Empty) `
+                -FromStartTime ([datetime]::MinValue) `
+                -ToStartTime ([datetime]::MaxValue) `
+                -All 4>&1
+
             $result | Should -Be "SELECT * FROM StatusReport WHERE Id = '00000000-0000-0000-0000-000000000000' AND NodeName like 'bogusNode' AND StartTime >= '0001-01-01T00:00:00' AND StartTime <= '9999-12-31T23:59:59' AND JobId = '00000000-0000-0000-0000-000000000000'"
 
             Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 0 -Scope it

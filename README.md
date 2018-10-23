@@ -52,3 +52,9 @@ All data can be copied over.
 ![edb2sql01](/images/edb2sql01.png)
 
 ![edb2sql02](/images/edb2sql02.png)
+
+## Class diagram
+
+This project is PowerShell class based. Find here the Class diagram structure:
+
+![Diagram](/images/ClassDiagram.png)

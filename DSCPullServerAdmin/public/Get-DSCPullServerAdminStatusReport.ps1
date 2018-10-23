@@ -23,6 +23,17 @@
     .PARAMETER ToStartTime
     Return the reports which start no later than the specific ToStartTime.
 
+    .PARAMETER All
+    Return all reports that correspond to specified filters (overwrites Top parameter).
+    SQL Only.
+
+    .PARAMETER Top
+    Return number of reports that correspond to specified filters.
+    SQL Only.
+
+    .PARAMETER OperationType
+    Return the reports which have the specified OperationType.
+
     .PARAMETER Connection
     Accepts a specific Connection to be passed to target a specific database.
     When not specified, the currently Active Connection from memory will be used
@@ -65,6 +76,16 @@ function Get-DSCPullServerAdminStatusReport {
         [Parameter()]
         [datetime] $ToStartTime,
 
+        [Parameter()]
+        [switch] $All,
+
+        [Parameter()]
+        [uint16] $Top = 5,
+
+        [Parameter()]
+        [ValidateSet('All', 'LocalConfigurationManager', 'Consistency', 'Initial')]
+        [string] $OperationType = 'All',
+
         [Parameter(ParameterSetName = 'Connection')]
         [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
 
@@ -99,6 +120,7 @@ function Get-DSCPullServerAdminStatusReport {
             ESE {
                 $eseParams = @{
                     Connection = $Connection
+                    OperationType = $OperationType
                 }
                 if ($PSBoundParameters.ContainsKey('AgentId')) {
                     $eseParams.Add('AgentId', $AgentId)
@@ -119,7 +141,11 @@ function Get-DSCPullServerAdminStatusReport {
                 Get-DSCPullServerESEStatusReport @eseParams
             }
             SQL {
-                $tsqlScript = "SELECT * FROM StatusReport"
+                if ($PSBoundParameters.ContainsKey('All')) {
+                    $tsqlScript = 'SELECT * FROM StatusReport'
+                } else {
+                    $tsqlScript = 'SELECT TOP({0}) * FROM StatusReport' -f $Top
+                }
                 $filters = [System.Collections.ArrayList]::new()
                 if ($PSBoundParameters.ContainsKey('AgentId')) {
                     [void] $filters.Add(("Id = '{0}'" -f $AgentId))
@@ -135,6 +161,10 @@ function Get-DSCPullServerAdminStatusReport {
                 }
                 if ($PSBoundParameters.ContainsKey("JobId")) {
                     [void] $filters.Add(("JobId = '{0}'" -f $JobId))
+                }
+
+                if ($OperationType -ne 'All') {
+                    [void] $filters.Add("OperationType = '{0}'" -f $OperationType)
                 }
 
                 if ($filters.Count -ge 1) {

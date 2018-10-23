@@ -50,7 +50,7 @@ InModuleScope $moduleName {
                 Write-Verbose -Message $Script -Verbose
             }
 
-            $result = Set-DSCPullServerAdminStatusReport -JobId ([guid]::Empty) -NodeName 'newNodeName' 4>&1
+            $result = Set-DSCPullServerAdminStatusReport -JobId ([guid]::Empty) -NodeName 'newNodeName' -Confirm:$false 4>&1
             $result | Should -Not -BeNullOrEmpty
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminStatusReport -Exactly -Times 1 -Scope it
@@ -62,7 +62,7 @@ InModuleScope $moduleName {
 
             Mock -CommandName Invoke-DSCPullServerSQLCommand
 
-            { Set-DSCPullServerAdminStatusReport -JobId ([guid]::Empty) -NodeName 'newNodeName' } |
+            { Set-DSCPullServerAdminStatusReport -JobId ([guid]::Empty) -NodeName 'newNodeName' -Confirm:$false } |
                 Should -Throw
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminStatusReport -Exactly -Times 1 -Scope it

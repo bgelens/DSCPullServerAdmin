@@ -30,7 +30,7 @@ InModuleScope $moduleName {
                 Write-Verbose -Message $Script -Verbose
             }
 
-            $result = $device | Set-DSCPullServerAdminDevice -ConfigurationID '00000000-0000-0000-0000-000000000001' 4>&1
+            $result = $device | Set-DSCPullServerAdminDevice -ConfigurationID '00000000-0000-0000-0000-000000000001' -Confirm:$false 4>&1
             $result | Should -Not -BeNullOrEmpty
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 0 -Scope it
@@ -49,7 +49,7 @@ InModuleScope $moduleName {
                 Write-Verbose -Message $Script -Verbose
             }
 
-            $result = Set-DSCPullServerAdminDevice -TargetName 'bogusDevice' -ConfigurationID '00000000-0000-0000-0000-000000000001' 4>&1
+            $result = Set-DSCPullServerAdminDevice -TargetName 'bogusDevice' -ConfigurationID '00000000-0000-0000-0000-000000000001' -Confirm:$false 4>&1
             $result | Should -Not -BeNullOrEmpty
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 1 -Scope it
@@ -61,7 +61,7 @@ InModuleScope $moduleName {
 
             Mock -CommandName Invoke-DSCPullServerSQLCommand
 
-            { Set-DSCPullServerAdminDevice -TargetName 'bogusDevice' -ConfigurationID '00000000-0000-0000-0000-000000000001' } |
+            { Set-DSCPullServerAdminDevice -TargetName 'bogusDevice' -ConfigurationID '00000000-0000-0000-0000-000000000001' -Confirm:$false } |
                 Should -Throw
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 1 -Scope it

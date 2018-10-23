@@ -29,7 +29,7 @@ InModuleScope $moduleName {
                 Write-Verbose -Message $Script -Verbose
             }
 
-            $result = $registration | Set-DSCPullServerAdminRegistration -ConfigurationNames 'bogusConfig' 4>&1
+            $result = $registration | Set-DSCPullServerAdminRegistration -ConfigurationNames 'bogusConfig' -Confirm:$false 4>&1
             $result | Should -Not -BeNullOrEmpty
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminRegistration -Exactly -Times 0 -Scope it
@@ -48,7 +48,7 @@ InModuleScope $moduleName {
                 Write-Verbose -Message $Script -Verbose
             }
 
-            $result = Set-DSCPullServerAdminRegistration -AgentId ([guid]::Empty) -ConfigurationNames 'bogusConfig' 4>&1
+            $result = Set-DSCPullServerAdminRegistration -AgentId ([guid]::Empty) -ConfigurationNames 'bogusConfig' -Confirm:$false 4>&1
             $result | Should -Not -BeNullOrEmpty
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminRegistration -Exactly -Times 1 -Scope it
@@ -60,7 +60,7 @@ InModuleScope $moduleName {
 
             Mock -CommandName Invoke-DSCPullServerSQLCommand
 
-            { Set-DSCPullServerAdminRegistration -AgentId ([guid]::Empty) -ConfigurationNames 'bogusConfig' } |
+            { Set-DSCPullServerAdminRegistration -AgentId ([guid]::Empty) -ConfigurationNames 'bogusConfig' -Confirm:$false } |
                 Should -Throw
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminRegistration -Exactly -Times 1 -Scope it

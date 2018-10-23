@@ -126,7 +126,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = 'Throw error when edb filepath specified is invalid.'
+        ReleaseNotes = 'SQL Query updates for Get-DSCPullServerAdminStatusReport. Increased ConfirmImpact to High for Set functions'
 
     } # End of PSData hashtable
 

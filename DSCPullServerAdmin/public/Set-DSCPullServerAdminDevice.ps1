@@ -65,7 +65,7 @@
 function Set-DSCPullServerAdminDevice {
     [CmdletBinding(
         DefaultParameterSetName = 'InputObject_Connection',
-        ConfirmImpact = 'Medium',
+        ConfirmImpact = 'High',
         SupportsShouldProcess
     )]
     param (

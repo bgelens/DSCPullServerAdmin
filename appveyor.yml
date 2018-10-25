@@ -1,6 +1,8 @@
 
 os: WMF 5
 
+clone_folder: c:\projects\DSCPullServerAdmin
+
 build: false
 
 build_script:
@@ -9,3 +11,5 @@ build_script:
 environment:
   NuGetApiKey:
     secure: lwF9LdoE9z5NFxxZB0yh6g0Ly4gFWfRwftRLqCRNuSdRXjpi10uvRynwm4A2tiI7
+  GitHubKey:
+    secure: 6b8uwr5ASsUbWr7dbRJ7ARufTglPEwAwJA28BuPWComAUphpixxzyJmhP4ctoj9F

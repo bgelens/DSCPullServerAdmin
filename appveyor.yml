@@ -3,7 +3,7 @@ os: WMF 5
 
 clone_folder: c:\projects\DSCPullServerAdmin
 
-build: false
+build: off
 
 build_script:
   - ps: . .\.build.ps1 -ResolveDependency

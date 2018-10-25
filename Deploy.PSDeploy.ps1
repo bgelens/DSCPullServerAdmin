@@ -4,11 +4,11 @@ if (
 )
 {
 
-    Write-Host "PR: $Env:APPVEYOR_PULL_REQUEST_NUMBER"
     if (!$Env:APPVEYOR_PULL_REQUEST_NUMBER -and 
         $Env:BuildSystem -eq 'AppVeyor' -and 
         $Env:BranchName -eq 'master' -and 
         $Env:NuGetApiKey -and
+        $Env:GitHubKey -and
         $Env:CommitMessage -match '!Deploy'
     ) {
         $manifest = Import-PowerShellDataFile -Path ".\$Env:ProjectName\$Env:ProjectName.psd1"
@@ -45,7 +45,6 @@ if (
                 Description = 'Get data from your DSC Pull Server database'
                 Author = "Ben Gelens"
                 Owners = "Ben Gelens"
-                destinationPath = ".\BuildOutput\$Env:ProjectName"
             }
             Tagged Appveyor
         }

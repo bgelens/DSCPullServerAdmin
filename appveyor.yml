@@ -3,6 +3,8 @@ os: WMF 5
 
 clone_folder: c:\projects\DSCPullServerAdmin
 
+skip_tags: true
+
 build: off
 
 build_script:

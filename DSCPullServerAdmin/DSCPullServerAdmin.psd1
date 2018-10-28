@@ -126,7 +126,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = 'SQL Query updates for Get-DSCPullServerAdminStatusReport. Increased ConfirmImpact to High for Set functions'
+        ReleaseNotes = 'No changes, build pipeline update to create GitHub releases togheter with PSGallery Publishing'
 
     } # End of PSData hashtable
 

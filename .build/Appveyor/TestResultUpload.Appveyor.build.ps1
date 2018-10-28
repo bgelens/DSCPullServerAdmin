@@ -33,13 +33,13 @@ task Upload_Unit_Test_Results_To_CodeCov -If {(property BuildSystem 'unknown') -
 
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $ProgressPreference = 'SilentlyContinue'
-    Invoke-WebRequest -UseBasicParsing -Uri 'https://github.com/codecov/codecov-exe/releases/download/1.0.4/Codecov.zip' -OutFile .\Codecov.zip
+    Invoke-WebRequest -UseBasicParsing -Uri 'https://github.com/codecov/codecov-exe/releases/download/1.1.0/Codecov.zip' -OutFile .\Codecov.zip
     $ProgressPreference = 'Continue'
     Unblock-File -Path .\Codecov.zip
     Expand-Archive -Path .\Codecov.zip -DestinationPath .\codecov
 
     Write-Build Green "  Uploading test results [$($TestResultFiles.Name -join ', ')] to CodeCov"
 
-    .\codecov\codecov.exe -f $TestResultFiles.FullName
+    .\codecov\codecov.exe -f $TestResultFiles.FullName --root $BuildRoot
 }
 

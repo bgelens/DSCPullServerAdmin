@@ -54,7 +54,7 @@ function Remove-DSCPullServerAdminStatusReport {
 
         [Parameter(ParameterSetName = 'InputObject_Connection')]
         [Parameter(ParameterSetName = 'Manual_Connection')]
-        [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
+        [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
 
         [Parameter(Mandatory, ParameterSetName = 'InputObject_SQL')]
         [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
@@ -89,9 +89,24 @@ function Remove-DSCPullServerAdminStatusReport {
         if ($null -eq $existingReport) {
             Write-Warning -Message "A Report with JobId '$JobId' was not found"
         } else {
-            $tsqlScript = $existingReport.GetSQLDelete()
-            if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
-                Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+            switch ($Connection.Type) {
+                ESE {
+                    if ($PSCmdlet.ShouldProcess($Connection.ESEFilePath)) {
+                        if ($PSCmdlet.MyInvocation.PipelinePosition -gt 1) {
+                            Remove-DSCPullServerESERecord -Connection $Connection
+                        } else {
+                            Get-DSCPullServerESEStatusReport -Connection $Connection -JobId $existingReport.JobId |
+                                Remove-DSCPullServerESERecord -Connection $Connection
+                        }
+                    }
+                }
+                SQL {
+                    $tsqlScript = $existingReport.GetSQLDelete()
+    
+                    if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+                        Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                    }
+                }
             }
         }
     }

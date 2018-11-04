@@ -54,7 +54,7 @@ function Remove-DSCPullServerAdminRegistration {
 
         [Parameter(ParameterSetName = 'InputObject_Connection')]
         [Parameter(ParameterSetName = 'Manual_Connection')]
-        [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
+        [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
 
         [Parameter(Mandatory, ParameterSetName = 'InputObject_SQL')]
         [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
@@ -89,9 +89,24 @@ function Remove-DSCPullServerAdminRegistration {
         if ($null -eq $existingRegistration) {
             Write-Warning -Message "A NodeRegistration with AgentId '$AgentId' was not found"
         } else {
-            $tsqlScript = $existingRegistration.GetSQLDelete()
-            if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
-                Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+            switch ($Connection.Type) {
+                ESE {
+                    if ($PSCmdlet.ShouldProcess($Connection.ESEFilePath)) {
+                        if ($PSCmdlet.MyInvocation.PipelinePosition -gt 1) {
+                            Remove-DSCPullServerESERecord -Connection $Connection
+                        } else {
+                            Get-DSCPullServerESERegistration -Connection $Connection -AgentId $existingRegistration.AgentId |
+                                Remove-DSCPullServerESERecord -Connection $Connection
+                        }
+                    }
+                }
+                SQL {
+                    $tsqlScript = $existingRegistration.GetSQLDelete()
+    
+                    if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+                        Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                    }
+                }
             }
         }
     }

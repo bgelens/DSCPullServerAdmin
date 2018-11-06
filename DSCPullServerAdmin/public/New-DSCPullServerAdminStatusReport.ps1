@@ -139,7 +139,7 @@ function New-DSCPullServerAdminStatusReport {
         [PSObject[]] $AdditionalData,
 
         [Parameter(ParameterSetName = 'Connection')]
-        [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
+        [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
 
         [Parameter(Mandatory, ParameterSetName = 'SQL')]
         [ValidateNotNullOrEmpty()]
@@ -172,12 +172,40 @@ function New-DSCPullServerAdminStatusReport {
         $existingReport = Get-DSCPullServerAdminStatusReport -Connection $Connection -JobId $report.JobId
         if ($null -ne $existingReport) {
             throw "A Report with JobId '$JobId' already exists."
-        } else {
-            $tsqlScript = $report.GetSQLInsert()
         }
 
-        if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
-            Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+        switch ($Connection.Type) {
+            ESE {
+                if ($PSCmdlet.ShouldProcess($Connection.ESEFilePath)) {
+                    $table = 'StatusReport'
+                    [Microsoft.Isam.Esent.Interop.JET_TABLEID] $tableId = [Microsoft.Isam.Esent.Interop.JET_TABLEID]::Nil
+                    try {
+                        Mount-DSCPullServerESEDatabase -Connection $Connection -Mode None
+                        [void] [Microsoft.Isam.Esent.Interop.Api]::JetOpenTable(
+                            $Connection.SessionId,
+                            $Connection.DbId,
+                            $Table,
+                            $null,
+                            0,
+                            [Microsoft.Isam.Esent.Interop.OpenTableGrbit]::None,
+                            [ref]$tableId
+                        )
+                        $Connection.TableId = $tableId
+                        Set-DSCPullServerESERecord -Connection $Connection -InputObject $report -Insert
+                    } catch {
+                        Write-Error -ErrorRecord $_ -ErrorAction Stop
+                    } finally {
+                        Dismount-DSCPullServerESEDatabase -Connection $Connection
+                    }
+                }
+            }
+            SQL {
+                $tsqlScript = $report.GetSQLInsert()
+
+                if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+                    Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                }
+            }
         }
     }
 }

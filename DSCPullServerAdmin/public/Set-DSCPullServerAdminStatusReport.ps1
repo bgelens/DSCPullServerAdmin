@@ -151,7 +151,7 @@ function Set-DSCPullServerAdminStatusReport {
 
         [Parameter(ParameterSetName = 'InputObject_Connection')]
         [Parameter(ParameterSetName = 'Manual_Connection')]
-        [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
+        [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
 
         [Parameter(Mandatory, ParameterSetName = 'InputObject_SQL')]
         [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
@@ -179,24 +179,38 @@ function Set-DSCPullServerAdminStatusReport {
     process {
         if (-not $PSBoundParameters.ContainsKey('InputObject')) {
             $existingReport = Get-DSCPullServerAdminStatusReport -Connection $Connection -JobId $JobId
+            if ($null -eq $existingReport) {
+                throw "A Report with JobId '$JobId' was not found"
+            }
         } else {
             $existingReport = $InputObject
         }
 
-        if ($null -eq $existingReport) {
-            throw "A Report with JobId '$JobId' was not found"
-        } else {
-            $PSBoundParameters.Keys.Where{
-                $_ -in ($existingReport | Get-Member -MemberType Property).Name
-            }.ForEach{
-                if ($null -ne $PSBoundParameters.$_) {
-                    $existingReport.$_ = $PSBoundParameters.$_
+        $PSBoundParameters.Keys.Where{
+            $_ -in ($existingReport | Get-Member -MemberType Property).Name
+        }.ForEach{
+            if ($null -ne $PSBoundParameters.$_) {
+                $existingReport.$_ = $PSBoundParameters.$_
+            }
+        }
+
+        switch ($Connection.Type) {
+            ESE {
+                if ($PSCmdlet.ShouldProcess($Connection.ESEFilePath)) {
+                    if ($PSCmdlet.MyInvocation.PipelinePosition -gt 1) {
+                        Set-DSCPullServerESERecord -Connection $Connection -InputObject $existingReport
+                    } else {
+                        Get-DSCPullServerAdminStatusReport -Connection $Connection -JobId $existingReport.JobId |
+                            Set-DSCPullServerESERecord -Connection $Connection -InputObject $existingReport
+                    }
                 }
             }
-            $tsqlScript = $existingReport.GetSQLUpdate()
+            SQL {
+                $tsqlScript = $existingReport.GetSQLUpdate()
 
-            if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
-                Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+                    Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                }
             }
         }
     }

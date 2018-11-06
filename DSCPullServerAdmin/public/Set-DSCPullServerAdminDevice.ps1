@@ -104,7 +104,7 @@ function Set-DSCPullServerAdminDevice {
 
         [Parameter(ParameterSetName = 'InputObject_Connection')]
         [Parameter(ParameterSetName = 'Manual_Connection')]
-        [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
+        [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
 
         [Parameter(Mandatory, ParameterSetName = 'InputObject_SQL')]
         [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
@@ -132,24 +132,38 @@ function Set-DSCPullServerAdminDevice {
     process {
         if (-not $PSBoundParameters.ContainsKey('InputObject')) {
             $existingDevice = Get-DSCPullServerAdminDevice -Connection $Connection -TargetName $TargetName
+            if ($null -eq $existingRegistration) {
+                throw "A Device with TargetName '$TargetName' was not found"
+            }
         } else {
             $existingDevice = $InputObject
         }
 
-        if ($null -eq $existingDevice) {
-            throw "A Device with TargetName '$TargetName' was not found"
-        } else {
-            $PSBoundParameters.Keys.Where{
-                $_ -in ($existingDevice | Get-Member -MemberType Property | Where-Object -FilterScript {$_.Name -ne 'Status'} ).Name
-            }.ForEach{
-                if ($null -ne $PSBoundParameters.$_) {
-                    $existingDevice.$_ = $PSBoundParameters.$_
+        $PSBoundParameters.Keys.Where{
+            $_ -in ($existingDevice | Get-Member -MemberType Property | Where-Object -FilterScript {$_.Name -ne 'Status'} ).Name
+        }.ForEach{
+            if ($null -ne $PSBoundParameters.$_) {
+                $existingDevice.$_ = $PSBoundParameters.$_
+            }
+        }
+
+        switch ($Connection.Type) {
+            ESE {
+                if ($PSCmdlet.ShouldProcess($Connection.ESEFilePath)) {
+                    if ($PSCmdlet.MyInvocation.PipelinePosition -gt 1) {
+                        Set-DSCPullServerESERecord -Connection $Connection -InputObject $existingDevice
+                    } else {
+                        Get-DSCPullServerAdminDevice -Connection $Connection -TargetName $existingDevice.TargetName |
+                            Set-DSCPullServerESERecord -Connection $Connection -InputObject $existingDevice
+                    }
                 }
             }
-            $tsqlScript = $existingDevice.GetSQLUpdate()
+            SQL {
+                $tsqlScript = $existingDevice.GetSQLUpdate()
 
-            if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
-                Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+                    Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                }
             }
         }
     }

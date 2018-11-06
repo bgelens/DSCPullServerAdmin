@@ -129,10 +129,10 @@ function Set-DSCPullServerAdminRegistration {
             ESE {
                 if ($PSCmdlet.ShouldProcess($Connection.ESEFilePath)) {
                     if ($PSCmdlet.MyInvocation.PipelinePosition -gt 1) {
-                        Set-DSCPullServerESERegistration -Connection $Connection -InputObject $existingRegistration
+                        Set-DSCPullServerESERecord -Connection $Connection -InputObject $existingRegistration
                     } else {
                         Get-DSCPullServerESERegistration -Connection $Connection -AgentId $existingRegistration.AgentId |
-                            Set-DSCPullServerESERegistration -Connection $Connection -InputObject $existingRegistration
+                            Set-DSCPullServerESERecord -Connection $Connection -InputObject $existingRegistration
                     }
                 }
             }

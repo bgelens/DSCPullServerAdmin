@@ -124,7 +124,7 @@ function New-DSCPullServerAdminRegistration {
                             [ref]$tableId
                         )
                         $Connection.TableId = $tableId
-                        Set-DSCPullServerESERegistration -Connection $Connection -InputObject $nodeRegistration -Insert
+                        Set-DSCPullServerESERecord -Connection $Connection -InputObject $nodeRegistration -Insert
                     } catch {
                         Write-Error -ErrorRecord $_ -ErrorAction Stop
                     } finally {

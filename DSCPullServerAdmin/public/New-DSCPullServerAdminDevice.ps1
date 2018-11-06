@@ -92,7 +92,7 @@ function New-DSCPullServerAdminDevice {
         [uint32] $StatusCode,
 
         [Parameter(ParameterSetName = 'Connection')]
-        [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
+        [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
 
         [Parameter(Mandatory, ParameterSetName = 'SQL')]
         [ValidateNotNullOrEmpty()]
@@ -125,12 +125,40 @@ function New-DSCPullServerAdminDevice {
         $existingDevice = Get-DSCPullServerAdminDevice -Connection $Connection -TargetName $device.TargetName
         if ($null -ne $existingDevice) {
             throw "A Device with TargetName '$TargetName' already exists."
-        } else {
-            $tsqlScript = $device.GetSQLInsert()
         }
 
-        if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
-            Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+        switch ($Connection.Type) {
+            ESE {
+                if ($PSCmdlet.ShouldProcess($Connection.ESEFilePath)) {
+                    $table = 'Devices'
+                    [Microsoft.Isam.Esent.Interop.JET_TABLEID] $tableId = [Microsoft.Isam.Esent.Interop.JET_TABLEID]::Nil
+                    try {
+                        Mount-DSCPullServerESEDatabase -Connection $Connection -Mode None
+                        [void] [Microsoft.Isam.Esent.Interop.Api]::JetOpenTable(
+                            $Connection.SessionId,
+                            $Connection.DbId,
+                            $Table,
+                            $null,
+                            0,
+                            [Microsoft.Isam.Esent.Interop.OpenTableGrbit]::None,
+                            [ref]$tableId
+                        )
+                        $Connection.TableId = $tableId
+                        Set-DSCPullServerESERecord -Connection $Connection -InputObject $device -Insert
+                    } catch {
+                        Write-Error -ErrorRecord $_ -ErrorAction Stop
+                    } finally {
+                        Dismount-DSCPullServerESEDatabase -Connection $Connection
+                    }
+                }
+            }
+            SQL {
+                $tsqlScript = $device.GetSQLInsert()
+
+                if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+                    Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                }
+            }
         }
     }
 }

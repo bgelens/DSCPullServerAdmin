@@ -118,14 +118,14 @@ function Get-DSCPullServerESEStatusReport {
                             $Connection.SessionId,
                             $tableId,
                             $column.Columnid
-                        ) | ConvertFrom-Json
+                        ) | ConvertFrom-Json -ErrorAction SilentlyContinue
                     } elseif ($column.Name -eq 'AdditionalData') {
                         $statusReport."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
                             $Connection.SessionId,
                             $tableId,
                             $column.Columnid,
                             [System.Text.Encoding]::Unicode
-                        ) | ConvertFrom-Json
+                        ) | ConvertFrom-Json -ErrorAction SilentlyContinue
                     } else {
                         $statusReport."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
                             $Connection.SessionId,

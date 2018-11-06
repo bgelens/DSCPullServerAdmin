@@ -24,12 +24,21 @@ function Set-DSCPullServerESERecord {
 
         try {
             $columnDictionary.Keys.ForEach{
-                if ($_ -in 'ConfigurationNames', 'Errors', 'StatusData') {
+                if ($InputObject.GetType().Name -eq 'DSCNodeStatusReport' -and $_ -eq 'JobId') {
+                    #primary key cannot be updated
+                    return
+                } elseif ($InputObject.GetType().Name -eq 'DSCNodeRegistration' -and $_ -eq 'AgentId') {
+                    #primary key cannot be updated
+                    return
+                } elseif ($InputObject.GetType().Name -eq 'DSCDevice' -and $_ -eq 'Targetname') {
+                    #primary key cannot be updated
+                    return
+                } elseif ($_ -in 'ConfigurationNames', 'Errors', 'StatusData') {
                     [Microsoft.Isam.Esent.Interop.Api]::SerializeObjectToColumn(
                         $Connection.SessionId,
                         $Connection.TableId,
-                        $columnDictionary['ConfigurationNames'],
-                        $InputObject.ConfigurationNames
+                        $columnDictionary[$_],
+                        $InputObject.$_
                     )
                 } elseif ($_ -eq 'IPAddress') {
                     [Microsoft.Isam.Esent.Interop.Api]::SetColumn(

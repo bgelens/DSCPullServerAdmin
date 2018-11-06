@@ -54,8 +54,8 @@ function Get-DSCPullServerESEDevice {
             [Microsoft.Isam.Esent.Interop.Api]::MoveBeforeFirst($Connection.SessionId, $tableId)
 
             while ([Microsoft.Isam.Esent.Interop.Api]::TryMoveNext($Connection.SessionId, $tableId)) {
+                $device = [DSCDevice]::new()
                 foreach ($column in ([Microsoft.Isam.Esent.Interop.Api]::GetTableColumns($Connection.SessionId, $tableId))) {
-                    $device = [DSCDevice]::new()
                     if ($column.Name -in $stringColumns) {
                         $device."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
                             $Connection.SessionId,
@@ -64,14 +64,11 @@ function Get-DSCPullServerESEDevice {
                             [System.Text.Encoding]::Unicode
                         )
                     } elseif ($column.Name -in $boolColumns) {
-                        $row = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsBoolean(
+                        $device."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsBoolean(
                             $Connection.SessionId,
                             $tableId,
                             $column.Columnid
                         )
-                        if ($row.HasValue) {
-                            $device."$($column.Name)" = $row.Value
-                        }
                     } elseif ($column.Name -eq 'ConfigurationID') {
                         $device."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsGuid(
                             $Connection.SessionId,
@@ -79,23 +76,17 @@ function Get-DSCPullServerESEDevice {
                             $column.Columnid
                         )
                     } elseif ($column.Name -in $datetimeColumns) {
-                        $row = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsDateTime(
+                        $device."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsDateTime(
                             $Connection.SessionId,
                             $tableId,
                             $column.Columnid
                         )
-                        if ($row.HasValue) {
-                            $device."$($column.Name)" = $row.Value
-                        }
                     } elseif ($column.Name -eq 'StatusCode') {
-                        $row = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsInt32(
+                        $device.StatusCode = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsInt32(
                             $Connection.SessionId,
                             $tableId,
                             $column.Columnid
                         )
-                        if ($row.HasValue) {
-                            $device.StatusCode = $row.Value
-                        }
                     } else {
                         $device."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
                             $Connection.SessionId,

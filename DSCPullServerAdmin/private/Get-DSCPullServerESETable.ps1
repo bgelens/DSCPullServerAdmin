@@ -9,6 +9,11 @@ function Get-DSCPullServerESETable {
     try {
         Mount-DSCPullServerESEDatabase -Connection $Connection -Mode None
         [Microsoft.Isam.Esent.Interop.Api]::GetTableNames($Connection.SessionId, $Connection.DbId)
-        Dismount-DSCPullServerESEDatabase -Connection $Connection
-    } catch {}
+    } catch {
+        Write-Error -ErrorRecord $_ -ErrorAction Stop
+    } finally {
+        if ($null -ne $Connection.Instance) {
+            Dismount-DSCPullServerESEDatabase -Connection $Connection
+        }
+    }
 }

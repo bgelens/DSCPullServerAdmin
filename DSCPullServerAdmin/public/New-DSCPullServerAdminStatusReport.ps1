@@ -141,6 +141,10 @@ function New-DSCPullServerAdminStatusReport {
         [Parameter(ParameterSetName = 'Connection')]
         [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
 
+        [Parameter(Mandatory, ParameterSetName = 'ESE')]
+        [ValidateNotNullOrEmpty()]
+        [string] $ESEFilePath,
+
         [Parameter(Mandatory, ParameterSetName = 'SQL')]
         [ValidateNotNullOrEmpty()]
         [Alias('SQLInstance')]

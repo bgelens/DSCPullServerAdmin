@@ -113,6 +113,8 @@ function Get-DSCPullServerAdminStatusReport {
         $Connection = PreProc -ParameterSetName $PSCmdlet.ParameterSetName @PSBoundParameters
         if ($null -eq $Connection) {
             break
+        } else {
+            $script:GetConnection = $Connection
         }
     }
     process {
@@ -181,5 +183,8 @@ function Get-DSCPullServerAdminStatusReport {
                 }
             }
         }
+    }
+    end {
+        $script:GetConnection = $null
     }
 }

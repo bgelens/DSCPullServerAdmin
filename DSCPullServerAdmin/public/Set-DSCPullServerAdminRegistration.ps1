@@ -59,10 +59,12 @@ function Set-DSCPullServerAdminRegistration {
     param (
         [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_Connection')]
         [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_SQL')]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_ESE')]
         [DSCNodeRegistration] $InputObject,
 
         [Parameter(Mandatory, ParameterSetName = 'Manual_Connection')]
         [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_ESE')]
         [guid] $AgentId,
 
         [Parameter()]
@@ -83,6 +85,11 @@ function Set-DSCPullServerAdminRegistration {
         [Parameter(ParameterSetName = 'Manual_Connection')]
         [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
 
+        [Parameter(Mandatory, ParameterSetName = 'InputObject_ESE')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_ESE')]
+        [ValidateNotNullOrEmpty()]
+        [string] $ESEFilePath,
+
         [Parameter(Mandatory, ParameterSetName = 'InputObject_SQL')]
         [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
         [ValidateNotNullOrEmpty()]
@@ -99,8 +106,10 @@ function Set-DSCPullServerAdminRegistration {
     )
 
     begin {
-        if ($null -ne $Connection -and -not $PSBoundParameters.ContainsKey('Connection')) {
+        if ($null -ne $Connection -and -not $PSBoundParameters.ContainsKey('Connection') -and $null -eq $script:GetConnection) {
             [void] $PSBoundParameters.Add('Connection', $Connection)
+        } elseif ($null -ne $script:GetConnection) {
+            [void] $PSBoundParameters.Add('Connection', $script:GetConnection)
         }
         $Connection = PreProc -ParameterSetName $PSCmdlet.ParameterSetName @PSBoundParameters
         if ($null -eq $Connection) {

@@ -214,9 +214,13 @@ function Get-DSCPullServerESERecord {
             }
         } catch {
             Write-Error -ErrorRecord $_ -ErrorAction Stop
+        } finally {
+            Dismount-DSCPullServerESEDatabase -Connection $Connection
         }
     }
     end {
-        Dismount-DSCPullServerESEDatabase -Connection $Connection
+        if ($null -ne $Connection.Instance) {
+            Dismount-DSCPullServerESEDatabase -Connection $Connection
+        }
     }
 }

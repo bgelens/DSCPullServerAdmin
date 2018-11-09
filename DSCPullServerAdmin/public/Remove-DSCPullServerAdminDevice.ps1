@@ -95,14 +95,14 @@ function Remove-DSCPullServerAdminDevice {
                         if ($PSCmdlet.MyInvocation.PipelinePosition -gt 1) {
                             Remove-DSCPullServerESERecord -Connection $Connection
                         } else {
-                            Get-DSCPullServerESEStatusReport -Connection $Connection -TargetName $existingDevice.TargetName |
+                            Get-DSCPullServerAdminDevice -Connection $Connection -TargetName $existingDevice.TargetName |
                                 Remove-DSCPullServerESERecord -Connection $Connection
                         }
                     }
                 }
                 SQL {
                     $tsqlScript = $existingDevice.GetSQLDelete()
-    
+
                     if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
                         Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
                     }

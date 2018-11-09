@@ -11,6 +11,9 @@ InModuleScope $moduleName {
 
         It 'Should assign index 0 when no previous connecions are in module var DSCPullServerConnections' {
             Mock -CommandName Get-DSCPullServerAdminConnection
+            Mock -CommandName Test-DSCPullServerESEDatabase -MockWith {
+                $true
+            }
 
             $null = New-Item -Path TestDrive: -Name pull.edb -ItemType File -Force
             $result = New-DSCPullServerAdminConnection -ESEFilePath TestDrive:pull.edb
@@ -27,6 +30,10 @@ InModuleScope $moduleName {
                 $sqlConnection
             }
 
+            Mock -CommandName Test-DSCPullServerESEDatabase -MockWith {
+                $true
+            }
+
             $null = New-Item -Path TestDrive: -Name pull.edb -ItemType File -Force
             $result = New-DSCPullServerAdminConnection -ESEFilePath TestDrive:pull.edb
             $result.Index | Should -Be 1
@@ -36,6 +43,9 @@ InModuleScope $moduleName {
 
         It 'Should not add to module var DSCPullServerConnections when DontStore is specified' {
             Mock -CommandName Get-DSCPullServerAdminConnection
+            Mock -CommandName Test-DSCPullServerESEDatabase -MockWith {
+                $true
+            }
 
             $null = New-Item -Path TestDrive: -Name pull.edb -ItemType File -Force
             $null = New-DSCPullServerAdminConnection -ESEFilePath TestDrive:pull.edb -DontStore

@@ -7,13 +7,13 @@
     
     [string] $ModuleVersion = (property ModuleVersion $(
         if($resolvedModuleVersion = Get-NextNugetPackageVersion -Name $ProjectName -ErrorAction SilentlyContinue) {
-            if ($resolvedModuleVersion -gt [version]'0.2.0') {
+            if ($resolvedModuleVersion -gt [version]'0.3.0') {
                 $resolvedModuleVersion
             } else {
-                '0.2.0'
+                '0.3.0'
             }
         } else {
-            '0.2.0'
+            '0.3.0'
         }
         )),
 

@@ -121,6 +121,7 @@ function Get-DSCPullServerAdminStatusReport {
                 $eseParams = @{
                     Connection = $Connection
                     OperationType = $OperationType
+                    Table = 'StatusReport'
                 }
                 if ($PSBoundParameters.ContainsKey('AgentId')) {
                     $eseParams.Add('AgentId', $AgentId)
@@ -138,7 +139,7 @@ function Get-DSCPullServerAdminStatusReport {
                     $eseParams.Add('JobId', $JobId)
                 }
 
-                Get-DSCPullServerESEStatusReport @eseParams
+                Get-DSCPullServerESERecord @eseParams
             }
             SQL {
                 if ($PSBoundParameters.ContainsKey('All')) {

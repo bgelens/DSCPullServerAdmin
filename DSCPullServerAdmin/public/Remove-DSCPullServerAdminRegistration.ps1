@@ -95,14 +95,14 @@ function Remove-DSCPullServerAdminRegistration {
                         if ($PSCmdlet.MyInvocation.PipelinePosition -gt 1) {
                             Remove-DSCPullServerESERecord -Connection $Connection
                         } else {
-                            Get-DSCPullServerESERegistration -Connection $Connection -AgentId $existingRegistration.AgentId |
+                            Get-DSCPullServerAdminRegistration -Connection $Connection -AgentId $existingRegistration.AgentId |
                                 Remove-DSCPullServerESERecord -Connection $Connection
                         }
                     }
                 }
                 SQL {
                     $tsqlScript = $existingRegistration.GetSQLDelete()
-    
+
                     if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
                         Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
                     }

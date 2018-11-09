@@ -79,6 +79,9 @@ function New-DSCPullServerAdminConnection {
         }
     } else {
         $connection = [DSCPullServerESEConnection]::New($ESEFilePath)
+        if (-not (Test-DSCPullServerESEDatabase -Connection $connection)) {
+            Write-Error -Message "Database $ESEFilePath is an invalid PullServer Database" -ErrorAction Stop
+        }
     }
 
     if (-not $DontStore) {

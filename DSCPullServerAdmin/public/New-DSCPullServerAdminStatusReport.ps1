@@ -177,20 +177,9 @@ function New-DSCPullServerAdminStatusReport {
         switch ($Connection.Type) {
             ESE {
                 if ($PSCmdlet.ShouldProcess($Connection.ESEFilePath)) {
-                    $table = 'StatusReport'
-                    [Microsoft.Isam.Esent.Interop.JET_TABLEID] $tableId = [Microsoft.Isam.Esent.Interop.JET_TABLEID]::Nil
                     try {
                         Mount-DSCPullServerESEDatabase -Connection $Connection -Mode None
-                        [void] [Microsoft.Isam.Esent.Interop.Api]::JetOpenTable(
-                            $Connection.SessionId,
-                            $Connection.DbId,
-                            $Table,
-                            $null,
-                            0,
-                            [Microsoft.Isam.Esent.Interop.OpenTableGrbit]::None,
-                            [ref]$tableId
-                        )
-                        $Connection.TableId = $tableId
+                        Open-DSCPullServerTable -Connection $Connection -Table 'StatusReport'
                         Set-DSCPullServerESERecord -Connection $Connection -InputObject $report -Insert
                     } catch {
                         Write-Error -ErrorRecord $_ -ErrorAction Stop

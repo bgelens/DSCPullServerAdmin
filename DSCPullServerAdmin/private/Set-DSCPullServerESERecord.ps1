@@ -1,5 +1,6 @@
 function Set-DSCPullServerESERecord {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessage('PSUseShouldProcessForStateChangingFunctions', '')]
     param(
         [Parameter(Mandatory)]
         [DSCPullServerESEConnection] $Connection,
@@ -24,13 +25,13 @@ function Set-DSCPullServerESERecord {
 
         try {
             $columnDictionary.Keys.ForEach{
-                if ($InputObject.GetType().Name -eq 'DSCNodeStatusReport' -and $_ -eq 'JobId') {
+                if ($InputObject.GetType().Name -eq 'DSCNodeStatusReport' -and $_ -eq 'JobId' -and -not $Insert) {
                     #primary key cannot be updated
                     return
-                } elseif ($InputObject.GetType().Name -eq 'DSCNodeRegistration' -and $_ -eq 'AgentId') {
+                } elseif ($InputObject.GetType().Name -eq 'DSCNodeRegistration' -and $_ -eq 'AgentId' -and -not $Insert) {
                     #primary key cannot be updated
                     return
-                } elseif ($InputObject.GetType().Name -eq 'DSCDevice' -and $_ -eq 'Targetname') {
+                } elseif ($InputObject.GetType().Name -eq 'DSCDevice' -and $_ -eq 'Targetname' -and -not $Insert) {
                     #primary key cannot be updated
                     return
                 } elseif ($_ -in 'ConfigurationNames', 'Errors', 'StatusData') {

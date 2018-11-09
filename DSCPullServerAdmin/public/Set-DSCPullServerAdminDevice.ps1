@@ -132,7 +132,7 @@ function Set-DSCPullServerAdminDevice {
     process {
         if (-not $PSBoundParameters.ContainsKey('InputObject')) {
             $existingDevice = Get-DSCPullServerAdminDevice -Connection $Connection -TargetName $TargetName
-            if ($null -eq $existingRegistration) {
+            if ($null -eq $existingDevice) {
                 throw "A Device with TargetName '$TargetName' was not found"
             }
         } else {

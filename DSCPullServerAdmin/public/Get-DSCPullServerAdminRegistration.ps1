@@ -81,6 +81,7 @@ function Get-DSCPullServerAdminRegistration {
             ESE {
                 $eseParams = @{
                     Connection = $Connection
+                    Table = 'RegistrationData'
                 }
                 if ($PSBoundParameters.ContainsKey('AgentId')) {
                     $eseParams.Add('AgentId', $AgentId)
@@ -89,7 +90,7 @@ function Get-DSCPullServerAdminRegistration {
                     $eseParams.Add('NodeName', $NodeName)
                 }
 
-                Get-DSCPullServerESERegistration @eseParams
+                Get-DSCPullServerESERecord @eseParams
             }
             SQL {
                 $tsqlScript = 'SELECT * FROM RegistrationData'

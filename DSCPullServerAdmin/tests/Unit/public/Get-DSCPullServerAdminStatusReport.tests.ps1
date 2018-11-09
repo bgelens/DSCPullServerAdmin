@@ -17,21 +17,21 @@ InModuleScope $moduleName {
             $script:DSCPullServerConnections = $null
         }
 
-        It 'Should Call Get-DSCPullServerESEStatusReport when Connection passed is ESE' {
+        It 'Should Call Get-DSCPullServerESERecord when Connection passed is ESE' {
             Mock -CommandName PreProc -MockWith {
                 $eseConnection
             }
 
-            Mock -CommandName Get-DSCPullServerESEStatusReport
+            Mock -CommandName Get-DSCPullServerESERecord
             Mock -CommandName Invoke-DSCPullServerSQLCommand
 
             Get-DSCPullServerAdminStatusReport -Connection $eseConnection
 
-            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
         }
 
-        It 'Should Call Get-DSCPullServerESEStatusReport when active Connection is ESE' {
+        It 'Should Call Get-DSCPullServerESERecord when active Connection is ESE' {
             $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
             [void] $script:DSCPullServerConnections.Add($eseConnection)
 
@@ -39,16 +39,16 @@ InModuleScope $moduleName {
                 $eseConnection
             }
 
-            Mock -CommandName Get-DSCPullServerESEStatusReport
+            Mock -CommandName Get-DSCPullServerESERecord
             Mock -CommandName Invoke-DSCPullServerSQLCommand
 
             Get-DSCPullServerAdminStatusReport
 
-            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
         }
 
-        It 'Should Call Get-DSCPullServerESEStatusReport with filters when active Connection is ESE and filters specified' {
+        It 'Should Call Get-DSCPullServerESERecord with filters when active Connection is ESE and filters specified' {
             $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
             [void] $script:DSCPullServerConnections.Add($eseConnection)
 
@@ -56,7 +56,7 @@ InModuleScope $moduleName {
                 $eseConnection
             }
 
-            Mock -CommandName Get-DSCPullServerESEStatusReport -MockWith {
+            Mock -CommandName Get-DSCPullServerESERecord -MockWith {
                 param (
                     $AgentId,
                     $NodeName,
@@ -89,7 +89,7 @@ InModuleScope $moduleName {
             $result.FromStartTime | Should -Be ([datetime]::MinValue)
             $result.ToStartTime | Should -Be ([datetime]::MaxValue)
 
-            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
         }
 
@@ -98,12 +98,12 @@ InModuleScope $moduleName {
                 $sqlConnection
             }
 
-            Mock -CommandName Get-DSCPullServerESEStatusReport
+            Mock -CommandName Get-DSCPullServerESERecord
             Mock -CommandName Invoke-DSCPullServerSQLCommand
 
             Get-DSCPullServerAdminStatusReport -Connection $sqlConnection
 
-            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
         }
 
@@ -115,12 +115,12 @@ InModuleScope $moduleName {
                 $sqlConnection
             }
 
-            Mock -CommandName Get-DSCPullServerESEStatusReport
+            Mock -CommandName Get-DSCPullServerESERecord
             Mock -CommandName Invoke-DSCPullServerSQLCommand
 
             Get-DSCPullServerAdminStatusReport
 
-            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
         }
 
@@ -132,7 +132,7 @@ InModuleScope $moduleName {
                 $sqlConnection
             }
 
-            Mock -CommandName Get-DSCPullServerESEStatusReport
+            Mock -CommandName Get-DSCPullServerESERecord
             Mock -CommandName Invoke-DSCPullServerSQLCommand -MockWith {
                 param (
                     $Script
@@ -150,7 +150,7 @@ InModuleScope $moduleName {
 
             $result | Should -Be "SELECT TOP(5) * FROM StatusReport WHERE Id = '00000000-0000-0000-0000-000000000000' AND NodeName like 'bogusNode' AND StartTime >= '0001-01-01T00:00:00' AND StartTime <= '9999-12-31T23:59:59' AND JobId = '00000000-0000-0000-0000-000000000000' AND OperationType = 'Consistency'"
 
-            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
         }
 
@@ -162,7 +162,7 @@ InModuleScope $moduleName {
                 $sqlConnection
             }
 
-            Mock -CommandName Get-DSCPullServerESEStatusReport
+            Mock -CommandName Get-DSCPullServerESERecord
             Mock -CommandName Invoke-DSCPullServerSQLCommand -MockWith {
                 param (
                     $Script
@@ -180,7 +180,7 @@ InModuleScope $moduleName {
 
             $result | Should -Be "SELECT * FROM StatusReport WHERE Id = '00000000-0000-0000-0000-000000000000' AND NodeName like 'bogusNode' AND StartTime >= '0001-01-01T00:00:00' AND StartTime <= '9999-12-31T23:59:59' AND JobId = '00000000-0000-0000-0000-000000000000'"
 
-            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
         }
 
@@ -192,7 +192,7 @@ InModuleScope $moduleName {
                 $sqlConnection
             }
 
-            Mock -CommandName Get-DSCPullServerESEStatusReport
+            Mock -CommandName Get-DSCPullServerESERecord
             Mock -CommandName Invoke-DSCPullServerSQLCommand -MockWith {
                 'invaliddata'
             }
@@ -201,7 +201,7 @@ InModuleScope $moduleName {
 
             Get-DSCPullServerAdminStatusReport
 
-            Assert-MockCalled -CommandName Get-DSCPullServerESEStatusReport -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Write-Error -Exactly -Times 1 -Scope it
         }

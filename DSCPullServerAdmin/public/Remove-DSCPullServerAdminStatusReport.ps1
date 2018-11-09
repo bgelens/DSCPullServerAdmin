@@ -95,14 +95,14 @@ function Remove-DSCPullServerAdminStatusReport {
                         if ($PSCmdlet.MyInvocation.PipelinePosition -gt 1) {
                             Remove-DSCPullServerESERecord -Connection $Connection
                         } else {
-                            Get-DSCPullServerESEStatusReport -Connection $Connection -JobId $existingReport.JobId |
+                            Get-DSCPullServerAdminStatusReport -Connection $Connection -JobId $existingReport.JobId |
                                 Remove-DSCPullServerESERecord -Connection $Connection
                         }
                     }
                 }
                 SQL {
                     $tsqlScript = $existingReport.GetSQLDelete()
-    
+
                     if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
                         Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
                     }

@@ -1,5 +1,6 @@
 function Remove-DSCPullServerESERecord {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessage('PSUseShouldProcessForStateChangingFunctions', '')]
     param(
         [Parameter(Mandatory)]
         [DSCPullServerESEConnection] $Connection,

@@ -34,7 +34,10 @@ function Get-DSCPullServerESERecord {
 
         [Parameter()]
         [ValidateSet('All', 'LocalConfigurationManager', 'Consistency', 'Initial')]
-        [string] $OperationType = 'All'
+        [string] $OperationType = 'All',
+
+        [Parameter()]
+        [uint16] $Top
     )
     begin {
         $stringColumns = @(
@@ -93,7 +96,12 @@ function Get-DSCPullServerESERecord {
     }
     process {
         try {
+            $recordCount = 0
             while ([Microsoft.Isam.Esent.Interop.Api]::TryMoveNext($Connection.SessionId, $Connection.TableId)) {
+                if ($PSBoundParameters.ContainsKey('Top') -and $Top -eq $recordCount) {
+                    break
+                }
+
                 switch ($Table) {
                     Devices {
                         $result = [DSCDevice]::new()
@@ -209,6 +217,7 @@ function Get-DSCPullServerESERecord {
                     if ($OperationType -ne 'All' -and $result.OperationType -ne $OperationType) {
                         continue
                     }
+                    [void] $recordCount++
                     $result
                 }
             }

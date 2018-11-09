@@ -140,6 +140,9 @@ function Get-DSCPullServerAdminStatusReport {
                 if ($PSBoundParameters.ContainsKey('JobId')) {
                     $eseParams.Add('JobId', $JobId)
                 }
+                if (-not ($PSBoundParameters.ContainsKey('All')) -and ($PSBoundParameters.ContainsKey('Top'))) {
+                    $eseParams.Add('Top', $Top)
+                }
 
                 Get-DSCPullServerESERecord @eseParams
             }

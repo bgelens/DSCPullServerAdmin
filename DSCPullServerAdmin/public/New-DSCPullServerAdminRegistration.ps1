@@ -51,21 +51,21 @@ function New-DSCPullServerAdminRegistration {
         SupportsShouldProcess
     )]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [guid] $AgentId,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [ValidateSet('2.0')]
         [string] $LCMVersion = '2.0',
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [ValidateNotNullOrEmpty()]
         [string] $NodeName,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [IPAddress[]] $IPAddress,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string[]] $ConfigurationNames,
 
         [Parameter(ParameterSetName = 'Connection')]

@@ -90,52 +90,52 @@ function New-DSCPullServerAdminStatusReport {
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [guid] $JobId,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [Guid] $Id = [guid]::NewGuid(),
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $OperationType,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $RefreshMode,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $Status,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $LCMVersion,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $ReportFormatVersion,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $ConfigurationVersion,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $NodeName,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [IPAddress[]] $IPAddress,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [datetime] $StartTime,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [datetime] $EndTime,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [datetime] $LastModifiedTime,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [PSObject[]] $Errors,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [PSObject[]] $StatusData,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [bool] $RebootRequested,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [PSObject[]] $AdditionalData,
 
         [Parameter(ParameterSetName = 'Connection')]

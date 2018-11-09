@@ -22,7 +22,7 @@ InModuleScope $moduleName {
     $report.Id = [guid]::Empty
     $report.JobId = [guid]::Empty
 
-    Describe Copy-DSCPullServerAdminDataESEToSQL {
+    Describe Copy-DSCPullServerAdminData {
         Context 'Devices' {
             It 'Should Copy devices from ESE to SQL when they do not exist in SQL' {
                 Mock -CommandName Get-DSCPullServerAdminDevice -MockWith {
@@ -43,7 +43,7 @@ InModuleScope $moduleName {
 
                 Mock -CommandName Write-Warning
 
-                $result = Copy-DSCPullServerAdminDataESEToSQL -ESEConnection $eseConnection -SQLConnection $sqlConnection -ObjectsToMigrate Devices 4>&1
+                $result = Copy-DSCPullServerAdminData -Connection1 $eseConnection -Connection2 $sqlConnection -ObjectsToMigrate Devices 4>&1
                 $result | Should -Not -BeNullOrEmpty
                 ($result | Measure-Object).Count | Should -BeExactly 1
 
@@ -66,7 +66,7 @@ InModuleScope $moduleName {
 
                 Mock -CommandName Write-Warning
 
-                $result = Copy-DSCPullServerAdminDataESEToSQL -ESEConnection $eseConnection -SQLConnection $sqlConnection -ObjectsToMigrate Devices 4>&1
+                $result = Copy-DSCPullServerAdminData -Connection1 $eseConnection -Connection2 $sqlConnection -ObjectsToMigrate Devices 4>&1
                 $result | Should -BeNullOrEmpty
                 ($result | Measure-Object).Count | Should -BeExactly 0
 
@@ -89,7 +89,7 @@ InModuleScope $moduleName {
 
                 Mock -CommandName Write-Warning
 
-                $result = Copy-DSCPullServerAdminDataESEToSQL -ESEConnection $eseConnection -SQLConnection $sqlConnection -ObjectsToMigrate Devices -Force 4>&1
+                $result = Copy-DSCPullServerAdminData -Connection1 $eseConnection -Connection2 $sqlConnection -ObjectsToMigrate Devices -Force 4>&1
                 $result | Should -Not -BeNullOrEmpty
                 ($result | Measure-Object).Count | Should -BeExactly 2
 
@@ -112,7 +112,7 @@ InModuleScope $moduleName {
 
                 Mock -CommandName Write-Warning
 
-                Copy-DSCPullServerAdminDataESEToSQL -ESEConnection $eseConnection -SQLConnection $sqlConnection -ObjectsToMigrate Devices -WhatIf
+                Copy-DSCPullServerAdminData -Connection1 $eseConnection -Connection2 $sqlConnection -ObjectsToMigrate Devices -WhatIf
 
                 Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 2 -Scope it
                 Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
@@ -128,7 +128,7 @@ InModuleScope $moduleName {
 
                 Mock -CommandName Write-Warning
 
-                Copy-DSCPullServerAdminDataESEToSQL -ESEConnection $eseConnection -SQLConnection $sqlConnection -ObjectsToMigrate Devices -WhatIf
+                Copy-DSCPullServerAdminData -Connection1 $eseConnection -Connection2 $sqlConnection -ObjectsToMigrate Devices -WhatIf
 
                 Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 2 -Scope it
                 Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
@@ -156,7 +156,7 @@ InModuleScope $moduleName {
 
                 Mock -CommandName Write-Warning
 
-                $result = Copy-DSCPullServerAdminDataESEToSQL -ESEConnection $eseConnection -SQLConnection $sqlConnection -ObjectsToMigrate RegistrationData 4>&1
+                $result = Copy-DSCPullServerAdminData -Connection1 $eseConnection -Connection2 $sqlConnection -ObjectsToMigrate RegistrationData 4>&1
                 $result | Should -Not -BeNullOrEmpty
                 ($result | Measure-Object).Count | Should -BeExactly 1
 
@@ -179,7 +179,7 @@ InModuleScope $moduleName {
 
                 Mock -CommandName Write-Warning
 
-                $result = Copy-DSCPullServerAdminDataESEToSQL -ESEConnection $eseConnection -SQLConnection $sqlConnection -ObjectsToMigrate RegistrationData 4>&1
+                $result = Copy-DSCPullServerAdminData -Connection1 $eseConnection -Connection2 $sqlConnection -ObjectsToMigrate RegistrationData 4>&1
                 $result | Should -BeNullOrEmpty
                 ($result | Measure-Object).Count | Should -BeExactly 0
 
@@ -202,7 +202,7 @@ InModuleScope $moduleName {
 
                 Mock -CommandName Write-Warning
 
-                $result = Copy-DSCPullServerAdminDataESEToSQL -ESEConnection $eseConnection -SQLConnection $sqlConnection -ObjectsToMigrate RegistrationData -Force 4>&1
+                $result = Copy-DSCPullServerAdminData -Connection1 $eseConnection -Connection2 $sqlConnection -ObjectsToMigrate RegistrationData -Force 4>&1
                 $result | Should -Not -BeNullOrEmpty
                 ($result | Measure-Object).Count | Should -BeExactly 2
 
@@ -225,7 +225,7 @@ InModuleScope $moduleName {
 
                 Mock -CommandName Write-Warning
 
-                Copy-DSCPullServerAdminDataESEToSQL -ESEConnection $eseConnection -SQLConnection $sqlConnection -ObjectsToMigrate RegistrationData -WhatIf
+                Copy-DSCPullServerAdminData -Connection1 $eseConnection -Connection2 $sqlConnection -ObjectsToMigrate RegistrationData -WhatIf
 
                 Assert-MockCalled -CommandName Get-DSCPullServerAdminRegistration -Exactly -Times 2 -Scope it
                 Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
@@ -241,7 +241,7 @@ InModuleScope $moduleName {
 
                 Mock -CommandName Write-Warning
 
-                Copy-DSCPullServerAdminDataESEToSQL -ESEConnection $eseConnection -SQLConnection $sqlConnection -ObjectsToMigrate RegistrationData -WhatIf
+                Copy-DSCPullServerAdminData -Connection1 $eseConnection -Connection2 $sqlConnection -ObjectsToMigrate RegistrationData -WhatIf
 
                 Assert-MockCalled -CommandName Get-DSCPullServerAdminRegistration -Exactly -Times 2 -Scope it
                 Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
@@ -269,7 +269,7 @@ InModuleScope $moduleName {
 
                 Mock -CommandName Write-Warning
 
-                $result = Copy-DSCPullServerAdminDataESEToSQL -ESEConnection $eseConnection -SQLConnection $sqlConnection -ObjectsToMigrate StatusReports 4>&1
+                $result = Copy-DSCPullServerAdminData -Connection1 $eseConnection -Connection2 $sqlConnection -ObjectsToMigrate StatusReports 4>&1
                 $result | Should -Not -BeNullOrEmpty
                 ($result | Measure-Object).Count | Should -BeExactly 1
 
@@ -292,7 +292,7 @@ InModuleScope $moduleName {
 
                 Mock -CommandName Write-Warning
 
-                $result = Copy-DSCPullServerAdminDataESEToSQL -ESEConnection $eseConnection -SQLConnection $sqlConnection -ObjectsToMigrate StatusReports 4>&1
+                $result = Copy-DSCPullServerAdminData -Connection1 $eseConnection -Connection2 $sqlConnection -ObjectsToMigrate StatusReports 4>&1
                 $result | Should -BeNullOrEmpty
                 ($result | Measure-Object).Count | Should -BeExactly 0
 
@@ -315,7 +315,7 @@ InModuleScope $moduleName {
 
                 Mock -CommandName Write-Warning
 
-                $result = Copy-DSCPullServerAdminDataESEToSQL -ESEConnection $eseConnection -SQLConnection $sqlConnection -ObjectsToMigrate StatusReports -Force 4>&1
+                $result = Copy-DSCPullServerAdminData -Connection1 $eseConnection -Connection2 $sqlConnection -ObjectsToMigrate StatusReports -Force 4>&1
                 $result | Should -Not -BeNullOrEmpty
                 ($result | Measure-Object).Count | Should -BeExactly 2
 
@@ -338,7 +338,7 @@ InModuleScope $moduleName {
 
                 Mock -CommandName Write-Warning
 
-                Copy-DSCPullServerAdminDataESEToSQL -ESEConnection $eseConnection -SQLConnection $sqlConnection -ObjectsToMigrate StatusReports -WhatIf
+                Copy-DSCPullServerAdminData -Connection1 $eseConnection -Connection2 $sqlConnection -ObjectsToMigrate StatusReports -WhatIf
 
                 Assert-MockCalled -CommandName Get-DSCPullServerAdminStatusReport -Exactly -Times 2 -Scope it
                 Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
@@ -354,7 +354,7 @@ InModuleScope $moduleName {
 
                 Mock -CommandName Write-Warning
 
-                Copy-DSCPullServerAdminDataESEToSQL -ESEConnection $eseConnection -SQLConnection $sqlConnection -ObjectsToMigrate StatusReports -WhatIf
+                Copy-DSCPullServerAdminData -Connection1 $eseConnection -Connection2 $sqlConnection -ObjectsToMigrate StatusReports -WhatIf
 
                 Assert-MockCalled -CommandName Get-DSCPullServerAdminStatusReport -Exactly -Times 2 -Scope it
                 Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it

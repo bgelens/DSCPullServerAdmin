@@ -63,32 +63,32 @@ function New-DSCPullServerAdminDevice {
         SupportsShouldProcess
     )]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [guid] $ConfigurationID,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [ValidateNotNullOrEmpty()]
         [string] $TargetName,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $ServerCheckSum,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $TargetCheckSum,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [bool] $NodeCompliant,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [datetime] $LastComplianceTime,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [datetime] $LastHeartbeatTime,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [bool] $Dirty,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [uint32] $StatusCode,
 
         [Parameter(ParameterSetName = 'Connection')]

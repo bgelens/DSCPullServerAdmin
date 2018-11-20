@@ -80,8 +80,10 @@ function Remove-DSCPullServerAdminRegistration {
     begin {
         if ($null -ne $Connection -and -not $PSBoundParameters.ContainsKey('Connection') -and $null -eq $script:GetConnection) {
             [void] $PSBoundParameters.Add('Connection', $Connection)
-        } elseif ($null -ne $script:GetConnection) {
+        } elseif ($null -ne $script:GetConnection -and -not $PSBoundParameters.ContainsKey('Connection')) {
             [void] $PSBoundParameters.Add('Connection', $script:GetConnection)
+        } elseif ($null -ne $script:GetConnection) {
+            $PSBoundParameters.Connection = $script:GetConnection
         }
         $Connection = PreProc -ParameterSetName $PSCmdlet.ParameterSetName @PSBoundParameters
         if ($null -eq $Connection) {

@@ -16,7 +16,7 @@ function PreProc {
         [Parameter(ValueFromRemainingArguments)]
         $DroppedParams
     )
-
+    $script:GetConnection = $null
     switch -Wildcard ($ParameterSetName) {
         *Connection {
             if (Test-DefaultDSCPullServerConnection $Connection) {

@@ -16,7 +16,14 @@ Overwrites node registration entries (LCMv2) in a Pull Server Database.
 ```
 Set-DSCPullServerAdminRegistration -InputObject <DSCNodeRegistration> [-LCMVersion <String>]
  [-NodeName <String>] [-IPAddress <IPAddress[]>] [-ConfigurationNames <String[]>]
- [-Connection <DSCPullServerSQLConnection>] [-WhatIf] [-Confirm] [<CommonParameters>]
+ [-Connection <DSCPullServerConnection>] [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
+### InputObject_ESE
+```
+Set-DSCPullServerAdminRegistration -InputObject <DSCNodeRegistration> [-LCMVersion <String>]
+ [-NodeName <String>] [-IPAddress <IPAddress[]>] [-ConfigurationNames <String[]>] -ESEFilePath <String>
+ [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### InputObject_SQL
@@ -24,6 +31,13 @@ Set-DSCPullServerAdminRegistration -InputObject <DSCNodeRegistration> [-LCMVersi
 Set-DSCPullServerAdminRegistration -InputObject <DSCNodeRegistration> [-LCMVersion <String>]
  [-NodeName <String>] [-IPAddress <IPAddress[]>] [-ConfigurationNames <String[]>] -SQLServer <String>
  [-Credential <PSCredential>] [-Database <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
+### Manual_ESE
+```
+Set-DSCPullServerAdminRegistration -AgentId <Guid> [-LCMVersion <String>] [-NodeName <String>]
+ [-IPAddress <IPAddress[]>] [-ConfigurationNames <String[]>] -ESEFilePath <String> [-WhatIf] [-Confirm]
+ [<CommonParameters>]
 ```
 
 ### Manual_SQL
@@ -36,14 +50,14 @@ Set-DSCPullServerAdminRegistration -AgentId <Guid> [-LCMVersion <String>] [-Node
 ### Manual_Connection
 ```
 Set-DSCPullServerAdminRegistration -AgentId <Guid> [-LCMVersion <String>] [-NodeName <String>]
- [-IPAddress <IPAddress[]>] [-ConfigurationNames <String[]>] [-Connection <DSCPullServerSQLConnection>]
- [-WhatIf] [-Confirm] [<CommonParameters>]
+ [-IPAddress <IPAddress[]>] [-ConfigurationNames <String[]>] [-Connection <DSCPullServerConnection>] [-WhatIf]
+ [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
 LCMv2 (WMF5+ / PowerShell 5+) pull clients send information
 to the Pull Server which stores their data in the registrationdata table.
-This function will allow for manual overwrites of registrations properteis
+This function will allow for manual overwrites of registrations properties
 in the registrationdata table.
 
 ## EXAMPLES
@@ -65,7 +79,7 @@ Pass in the registration object to be modified from the database.
 
 ```yaml
 Type: DSCNodeRegistration
-Parameter Sets: InputObject_Connection, InputObject_SQL
+Parameter Sets: InputObject_Connection, InputObject_ESE, InputObject_SQL
 Aliases:
 
 Required: True
@@ -80,7 +94,7 @@ Modify properties for the registration with specified AgentId.
 
 ```yaml
 Type: Guid
-Parameter Sets: Manual_SQL, Manual_Connection
+Parameter Sets: Manual_ESE, Manual_SQL, Manual_Connection
 Aliases:
 
 Required: True
@@ -157,13 +171,28 @@ unless one off the parameters for ad-hoc connections (ESEFilePath, SQLServer)
 is used in which case, an ad-hoc connection is created.
 
 ```yaml
-Type: DSCPullServerSQLConnection
+Type: DSCPullServerConnection
 Parameter Sets: InputObject_Connection, Manual_Connection
 Aliases:
 
 Required: False
 Position: Named
-Default value: (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL)
+Default value: (Get-DSCPullServerAdminConnection -OnlyShowActive)
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ESEFilePath
+Define the EDB file path to use an ad-hoc ESE connection.
+
+```yaml
+Type: String
+Parameter Sets: InputObject_ESE, Manual_ESE
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -245,7 +274,8 @@ Accept wildcard characters: False
 ```
 
 ### CommonParameters
-This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see about_CommonParameters (http://go.microsoft.com/fwlink/?LinkID=113216).
+This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable.
+For more information, see about_CommonParameters (http://go.microsoft.com/fwlink/?LinkID=113216).
 
 ## INPUTS
 

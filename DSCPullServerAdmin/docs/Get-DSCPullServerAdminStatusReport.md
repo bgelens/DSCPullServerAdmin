@@ -125,7 +125,9 @@ Accept wildcard characters: False
 
 ### -All
 Return all reports that correspond to specified filters (overwrites Top parameter).
-SQL Only.```yaml
+SQL Only.
+
+```yaml
 Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
@@ -139,7 +141,9 @@ Accept wildcard characters: False
 
 ### -Top
 Return number of reports that correspond to specified filters.
-SQL Only.```yaml
+SQL Only.
+
+```yaml
 Type: UInt16
 Parameter Sets: (All)
 Aliases:
@@ -152,7 +156,7 @@ Accept wildcard characters: False
 ```
 
 ### -OperationType
-{{Fill OperationType Description}}
+Return the reports which have the specified OperationType.
 
 ```yaml
 Type: String
@@ -245,7 +249,8 @@ Accept wildcard characters: False
 ```
 
 ### CommonParameters
-This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see about_CommonParameters (http://go.microsoft.com/fwlink/?LinkID=113216).
+This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable.
+For more information, see about_CommonParameters (http://go.microsoft.com/fwlink/?LinkID=113216).
 
 ## INPUTS
 

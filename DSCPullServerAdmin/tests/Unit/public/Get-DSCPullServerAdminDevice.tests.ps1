@@ -17,21 +17,21 @@ InModuleScope $moduleName {
             $script:DSCPullServerConnections = $null
         }
 
-        It 'Should Call Get-DSCPullServerESEDevice when Connection passed is ESE' {
+        It 'Should Call Get-DSCPullServerESERecord when Connection passed is ESE' {
             Mock -CommandName PreProc -MockWith {
                 $eseConnection
             }
 
-            Mock -CommandName Get-DSCPullServerESEDevice
+            Mock -CommandName Get-DSCPullServerESERecord
             Mock -CommandName Invoke-DSCPullServerSQLCommand
 
             Get-DSCPullServerAdminDevice -Connection $eseConnection
 
-            Assert-MockCalled -CommandName Get-DSCPullServerESEDevice -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
         }
 
-        It 'Should Call Get-DSCPullServerESEDevice when active Connection is ESE' {
+        It 'Should Call Get-DSCPullServerESERecord when active Connection is ESE' {
             $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
             [void] $script:DSCPullServerConnections.Add($eseConnection)
 
@@ -39,16 +39,16 @@ InModuleScope $moduleName {
                 $eseConnection
             }
 
-            Mock -CommandName Get-DSCPullServerESEDevice
+            Mock -CommandName Get-DSCPullServerESERecord
             Mock -CommandName Invoke-DSCPullServerSQLCommand
 
             Get-DSCPullServerAdminDevice
 
-            Assert-MockCalled -CommandName Get-DSCPullServerESEDevice -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
         }
 
-        It 'Should Call Get-DSCPullServerESEDevice with filters when active Connection is ESE and filters specified' {
+        It 'Should Call Get-DSCPullServerESERecord with filters when active Connection is ESE and filters specified' {
             $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
             [void] $script:DSCPullServerConnections.Add($eseConnection)
 
@@ -56,7 +56,7 @@ InModuleScope $moduleName {
                 $eseConnection
             }
 
-            Mock -CommandName Get-DSCPullServerESEDevice -MockWith {
+            Mock -CommandName Get-DSCPullServerESERecord -MockWith {
                 param (
                     $TargetName,
                     $ConfigurationID
@@ -74,7 +74,7 @@ InModuleScope $moduleName {
             $result.TargetName | Should -Be 'bogusTargetName'
             $result.ConfigurationID | Should -Be ([guid]::Empty)
 
-            Assert-MockCalled -CommandName Get-DSCPullServerESEDevice -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
         }
 
@@ -83,12 +83,12 @@ InModuleScope $moduleName {
                 $sqlConnection
             }
 
-            Mock -CommandName Get-DSCPullServerESEDevice
+            Mock -CommandName Get-DSCPullServerESERecord
             Mock -CommandName Invoke-DSCPullServerSQLCommand
 
             Get-DSCPullServerAdminDevice -Connection $sqlConnection
 
-            Assert-MockCalled -CommandName Get-DSCPullServerESEDevice -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
         }
 
@@ -100,12 +100,12 @@ InModuleScope $moduleName {
                 $sqlConnection
             }
 
-            Mock -CommandName Get-DSCPullServerESEDevice
+            Mock -CommandName Get-DSCPullServerESERecord
             Mock -CommandName Invoke-DSCPullServerSQLCommand
 
             Get-DSCPullServerAdminDevice
 
-            Assert-MockCalled -CommandName Get-DSCPullServerESEDevice -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
         }
 
@@ -117,7 +117,7 @@ InModuleScope $moduleName {
                 $sqlConnection
             }
 
-            Mock -CommandName Get-DSCPullServerESEDevice
+            Mock -CommandName Get-DSCPullServerESERecord
             Mock -CommandName Invoke-DSCPullServerSQLCommand -MockWith {
                 param (
                     $Script
@@ -128,7 +128,7 @@ InModuleScope $moduleName {
             $result = Get-DSCPullServerAdminDevice -TargetName 'bogusTargetName' -ConfigurationID ([guid]::Empty) 4>&1
             $result | Should -Be "SELECT * FROM Devices WHERE TargetName like 'bogusTargetName' AND ConfigurationID = '00000000-0000-0000-0000-000000000000'"
 
-            Assert-MockCalled -CommandName Get-DSCPullServerESEDevice -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
         }
 
@@ -140,7 +140,7 @@ InModuleScope $moduleName {
                 $sqlConnection
             }
 
-            Mock -CommandName Get-DSCPullServerESEDevice
+            Mock -CommandName Get-DSCPullServerESERecord
             Mock -CommandName Invoke-DSCPullServerSQLCommand -MockWith {
                 'invaliddata'
             }
@@ -149,7 +149,7 @@ InModuleScope $moduleName {
 
             Get-DSCPullServerAdminDevice
 
-            Assert-MockCalled -CommandName Get-DSCPullServerESEDevice -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Write-Error -Exactly -Times 1 -Scope it
         }

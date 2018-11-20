@@ -8,19 +8,21 @@ InModuleScope $moduleName {
     $sqlConnection.Active = $true
     $sqlConnection.Index = 0
 
-    $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
-    [void] $script:DSCPullServerConnections.Add($sqlConnection)
+    $eseConnection = [DSCPullServerESEConnection]::new()
+    $eseConnection.Index = 1
+    $eseConnection.Active = $false
 
     $device = [DSCDevice]::new()
     $device.TargetName = 'bogusDevice'
     $device.ConfigurationID = ([guid]::Empty)
 
-    Describe Set-DSCPullServerAdminDevice {
-        Mock -CommandName PreProc -MockWith {
-            $sqlConnection
-        }
+    function GetDeviceFromEDB {
+        $script:GetConnection = $eseConnection
+        $device
+    }
 
-        It 'Should update a device when it is passed in via InputObject (pipeline)' {
+    Describe Set-DSCPullServerAdminDevice {
+        It 'Should update a device when it is passed in via InputObject (pipeline) SQL' {
             Mock -CommandName Get-DSCPullServerAdminDevice
 
             Mock -CommandName Invoke-DSCPullServerSQLCommand -MockWith {
@@ -30,14 +32,39 @@ InModuleScope $moduleName {
                 Write-Verbose -Message $Script -Verbose
             }
 
+            Mock -CommandName Set-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $sqlConnection
+            }
+
             $result = $device | Set-DSCPullServerAdminDevice -ConfigurationID '00000000-0000-0000-0000-000000000001' -Confirm:$false 4>&1
             $result | Should -Not -BeNullOrEmpty
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 0 -Scope it
         }
 
-        It 'Should update a device when TargetName was specified and device was found' {
+        It 'Should update a device when it is passed in via InputObject (pipeline) ESE' {
+            Mock -CommandName Get-DSCPullServerAdminDevice
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Set-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            GetDeviceFromEDB | Set-DSCPullServerAdminDevice -ConfigurationID '00000000-0000-0000-0000-000000000001' -Confirm:$false 4>&1
+
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should update a device when TargetName was specified and device was found (SQL)' {
             Mock -CommandName Get-DSCPullServerAdminDevice -MockWith {
                 $device
             }
@@ -49,34 +76,112 @@ InModuleScope $moduleName {
                 Write-Verbose -Message $Script -Verbose
             }
 
-            $result = Set-DSCPullServerAdminDevice -TargetName 'bogusDevice' -ConfigurationID '00000000-0000-0000-0000-000000000001' -Confirm:$false 4>&1
+            Mock -CommandName Set-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $sqlConnection
+            }
+
+            $result = Set-DSCPullServerAdminDevice -TargetName 'bogusDevice' -ConfigurationID '00000000-0000-0000-0000-000000000001' -Connection $sqlConnection -Confirm:$false 4>&1
             $result | Should -Not -BeNullOrEmpty
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 0 -Scope it
         }
 
-        It 'Should throw when TargetName was specified but device was not found' {
+        It 'Should update a device when TargetName was specified and device was found (ESE)' {
+            Mock -CommandName Get-DSCPullServerAdminDevice -MockWith {
+                $device
+            }
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Set-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            Set-DSCPullServerAdminDevice -TargetName 'bogusDevice' -ConfigurationID '00000000-0000-0000-0000-000000000001' -Connection $eseConnection -Confirm:$false 4>&1
+
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 2 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should throw when TargetName was specified but device was not found (SQL)' {
             Mock -CommandName Get-DSCPullServerAdminDevice
 
             Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Set-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $sqlConnection
+            }
 
             { Set-DSCPullServerAdminDevice -TargetName 'bogusDevice' -ConfigurationID '00000000-0000-0000-0000-000000000001' -Confirm:$false } |
                 Should -Throw
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+        }
+
+        It 'Should throw when TargetName was specified but device was not found (ESE)' {
+            Mock -CommandName Get-DSCPullServerAdminDevice
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Set-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            { Set-DSCPullServerAdminDevice -TargetName 'bogusDevice' -ConfigurationID '00000000-0000-0000-0000-000000000001' -Confirm:$false } |
+                Should -Throw
+
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 0 -Scope it
         }
 
         It 'Should have ShouldProcess before calling Invoke-DSCPullServerSQLCommand' {
             Mock -CommandName Get-DSCPullServerAdminDevice
-        
+
             Mock -CommandName Invoke-DSCPullServerSQLCommand
-        
+
+            Mock -CommandName Set-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $sqlConnection
+            }
+
             $device | Set-DSCPullServerAdminDevice -ConfigurationID '00000000-0000-0000-0000-000000000001' -WhatIf
-        
+
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+        }
+
+        It 'Should have ShouldProcess before calling Set-DSCPullServerESERecord' {
+            Mock -CommandName Get-DSCPullServerAdminDevice
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Set-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            $device | Set-DSCPullServerAdminDevice -ConfigurationID '00000000-0000-0000-0000-000000000001' -WhatIf
+
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 0 -Scope it
         }
     }
 }

@@ -3,6 +3,7 @@ class DSCPullServerESEConnection : DSCPullServerConnection {
     hidden [object] $Instance
     hidden [object] $SessionId
     hidden [object] $DbId
+    hidden [object] $TableId
 
     DSCPullServerESEConnection () : base([DSCPullServerConnectionType]::ESE) { }
 

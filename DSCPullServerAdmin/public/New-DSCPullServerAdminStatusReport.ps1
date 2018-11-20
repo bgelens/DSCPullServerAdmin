@@ -90,56 +90,60 @@ function New-DSCPullServerAdminStatusReport {
         [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [guid] $JobId,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [Guid] $Id = [guid]::NewGuid(),
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $OperationType,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $RefreshMode,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $Status,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $LCMVersion,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $ReportFormatVersion,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $ConfigurationVersion,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $NodeName,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [IPAddress[]] $IPAddress,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [datetime] $StartTime,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [datetime] $EndTime,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [datetime] $LastModifiedTime,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [PSObject[]] $Errors,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [PSObject[]] $StatusData,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [bool] $RebootRequested,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [PSObject[]] $AdditionalData,
 
         [Parameter(ParameterSetName = 'Connection')]
-        [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
+        [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
+
+        [Parameter(Mandatory, ParameterSetName = 'ESE')]
+        [ValidateNotNullOrEmpty()]
+        [string] $ESEFilePath,
 
         [Parameter(Mandatory, ParameterSetName = 'SQL')]
         [ValidateNotNullOrEmpty()]
@@ -172,12 +176,29 @@ function New-DSCPullServerAdminStatusReport {
         $existingReport = Get-DSCPullServerAdminStatusReport -Connection $Connection -JobId $report.JobId
         if ($null -ne $existingReport) {
             throw "A Report with JobId '$JobId' already exists."
-        } else {
-            $tsqlScript = $report.GetSQLInsert()
         }
 
-        if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
-            Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+        switch ($Connection.Type) {
+            ESE {
+                if ($PSCmdlet.ShouldProcess($Connection.ESEFilePath)) {
+                    try {
+                        Mount-DSCPullServerESEDatabase -Connection $Connection -Mode None
+                        Open-DSCPullServerTable -Connection $Connection -Table 'StatusReport'
+                        Set-DSCPullServerESERecord -Connection $Connection -InputObject $report -Insert
+                    } catch {
+                        Write-Error -ErrorRecord $_ -ErrorAction Stop
+                    } finally {
+                        Dismount-DSCPullServerESEDatabase -Connection $Connection
+                    }
+                }
+            }
+            SQL {
+                $tsqlScript = $report.GetSQLInsert()
+
+                if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+                    Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                }
+            }
         }
     }
 }

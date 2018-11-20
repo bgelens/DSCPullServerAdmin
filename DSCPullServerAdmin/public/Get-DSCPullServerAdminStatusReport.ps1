@@ -113,6 +113,8 @@ function Get-DSCPullServerAdminStatusReport {
         $Connection = PreProc -ParameterSetName $PSCmdlet.ParameterSetName @PSBoundParameters
         if ($null -eq $Connection) {
             break
+        } else {
+            $script:GetConnection = $Connection
         }
     }
     process {
@@ -121,6 +123,7 @@ function Get-DSCPullServerAdminStatusReport {
                 $eseParams = @{
                     Connection = $Connection
                     OperationType = $OperationType
+                    Table = 'StatusReport'
                 }
                 if ($PSBoundParameters.ContainsKey('AgentId')) {
                     $eseParams.Add('AgentId', $AgentId)
@@ -137,8 +140,11 @@ function Get-DSCPullServerAdminStatusReport {
                 if ($PSBoundParameters.ContainsKey('JobId')) {
                     $eseParams.Add('JobId', $JobId)
                 }
+                if (-not ($PSBoundParameters.ContainsKey('All')) -and ($PSBoundParameters.ContainsKey('Top'))) {
+                    $eseParams.Add('Top', $Top)
+                }
 
-                Get-DSCPullServerESEStatusReport @eseParams
+                Get-DSCPullServerESERecord @eseParams
             }
             SQL {
                 if ($PSBoundParameters.ContainsKey('All')) {
@@ -180,5 +186,8 @@ function Get-DSCPullServerAdminStatusReport {
                 }
             }
         }
+    }
+    end {
+        $script:GetConnection = $null
     }
 }

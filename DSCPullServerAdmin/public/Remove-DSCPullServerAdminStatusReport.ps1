@@ -46,15 +46,22 @@ function Remove-DSCPullServerAdminStatusReport {
     param (
         [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_Connection')]
         [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_SQL')]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_ESE')]
         [DSCNodeStatusReport] $InputObject,
 
         [Parameter(Mandatory, ParameterSetName = 'Manual_Connection')]
         [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_ESE')]
         [guid] $JobId,
 
         [Parameter(ParameterSetName = 'InputObject_Connection')]
         [Parameter(ParameterSetName = 'Manual_Connection')]
-        [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
+        [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
+
+        [Parameter(Mandatory, ParameterSetName = 'InputObject_ESE')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_ESE')]
+        [ValidateNotNullOrEmpty()]
+        [string] $ESEFilePath,
 
         [Parameter(Mandatory, ParameterSetName = 'InputObject_SQL')]
         [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
@@ -71,8 +78,12 @@ function Remove-DSCPullServerAdminStatusReport {
         [string] $Database
     )
     begin {
-        if ($null -ne $Connection -and -not $PSBoundParameters.ContainsKey('Connection')) {
+        if ($null -ne $Connection -and -not $PSBoundParameters.ContainsKey('Connection') -and $null -eq $script:GetConnection) {
             [void] $PSBoundParameters.Add('Connection', $Connection)
+        } elseif ($null -ne $script:GetConnection -and -not $PSBoundParameters.ContainsKey('Connection')) {
+            [void] $PSBoundParameters.Add('Connection', $script:GetConnection)
+        } elseif ($null -ne $script:GetConnection) {
+            $PSBoundParameters.Connection = $script:GetConnection
         }
         $Connection = PreProc -ParameterSetName $PSCmdlet.ParameterSetName @PSBoundParameters
         if ($null -eq $Connection) {
@@ -89,9 +100,24 @@ function Remove-DSCPullServerAdminStatusReport {
         if ($null -eq $existingReport) {
             Write-Warning -Message "A Report with JobId '$JobId' was not found"
         } else {
-            $tsqlScript = $existingReport.GetSQLDelete()
-            if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
-                Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+            switch ($Connection.Type) {
+                ESE {
+                    if ($PSCmdlet.ShouldProcess($Connection.ESEFilePath)) {
+                        if ($PSCmdlet.MyInvocation.PipelinePosition -gt 1) {
+                            Remove-DSCPullServerESERecord -Connection $Connection
+                        } else {
+                            Get-DSCPullServerAdminStatusReport -Connection $Connection -JobId $existingReport.JobId |
+                                Remove-DSCPullServerESERecord -Connection $Connection
+                        }
+                    }
+                }
+                SQL {
+                    $tsqlScript = $existingReport.GetSQLDelete()
+
+                    if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+                        Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                    }
+                }
             }
         }
     }

@@ -81,6 +81,8 @@ class DSCDevice {
                     } else {
                         "$($_.Name) = '{0}'" -f $this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss')
                     }
+                } elseif ($_.Definition.Split(' ')[0] -like '*nullable*' -and $null -eq $this."$($_.Name)") {
+                    "$($_.Name) = NULL"
                 } else {
                     "$($_.Name) = '{0}'" -f $this."$($_.Name)"
                 }
@@ -103,6 +105,8 @@ class DSCDevice {
                         } else {
                             "'{0}'" -f $this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss')
                         }
+                    } elseif ($_.Definition.Split(' ')[0] -like '*nullable*' -and $null -eq $this."$($_.Name)") {
+                        'NULL'
                     } else {
                         "'{0}'" -f $this."$($_.Name)"
                     }

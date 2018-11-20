@@ -80,10 +80,10 @@ function New-DSCPullServerAdminDevice {
         [bool] $NodeCompliant,
 
         [Parameter(ValueFromPipelineByPropertyName)]
-        [datetime] $LastComplianceTime,
+        [nullable[datetime]] $LastComplianceTime,
 
         [Parameter(ValueFromPipelineByPropertyName)]
-        [datetime] $LastHeartbeatTime,
+        [nullable[datetime]] $LastHeartbeatTime,
 
         [Parameter(ValueFromPipelineByPropertyName)]
         [bool] $Dirty,

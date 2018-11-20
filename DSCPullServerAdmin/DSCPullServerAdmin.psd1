@@ -89,7 +89,7 @@ FunctionsToExport = @(
     'Set-DSCPullServerAdminDevice',
     'Set-DSCPullServerAdminRegistration',
     'Set-DSCPullServerAdminStatusReport',
-    'Copy-DSCPullServerAdminDataESEToSQL',
+    'Copy-DSCPullServerAdminData',
     'New-DSCPullServerAdminSQLDatabase'
 )
 

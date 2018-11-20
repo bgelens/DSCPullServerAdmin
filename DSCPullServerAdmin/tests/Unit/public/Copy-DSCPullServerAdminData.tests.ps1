@@ -14,8 +14,6 @@ InModuleScope $moduleName {
     $device = [DSCDevice]::new()
     $device.TargetName = 'bogusDevice'
     $device.ConfigurationID = ([guid]::Empty)
-    $device.LastComplianceTime = [datetime]::Now
-    $device.LastHeartbeatTime = [datetime]::Now
 
     $registration = [DSCNodeRegistration]::new()
     $registration.AgentId = [guid]::Empty

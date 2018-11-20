@@ -93,10 +93,10 @@ function Set-DSCPullServerAdminDevice {
         [bool] $NodeCompliant,
 
         [Parameter()]
-        [datetime] $LastComplianceTime,
+        [nullable[datetime]] $LastComplianceTime,
 
         [Parameter()]
-        [datetime] $LastHeartbeatTime,
+        [nullable[datetime]] $LastHeartbeatTime,
 
         [Parameter()]
         [bool] $Dirty,

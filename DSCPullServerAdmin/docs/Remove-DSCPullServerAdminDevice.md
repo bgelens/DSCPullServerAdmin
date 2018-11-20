@@ -14,14 +14,26 @@ Removes device entries (LCMv1) from a Pull Server Database.
 
 ### InputObject_Connection (Default)
 ```
-Remove-DSCPullServerAdminDevice -InputObject <DSCDevice> [-Connection <DSCPullServerSQLConnection>] [-WhatIf]
+Remove-DSCPullServerAdminDevice -InputObject <DSCDevice> [-Connection <DSCPullServerConnection>] [-WhatIf]
  [-Confirm] [<CommonParameters>]
+```
+
+### InputObject_ESE
+```
+Remove-DSCPullServerAdminDevice -InputObject <DSCDevice> -ESEFilePath <String> [-WhatIf] [-Confirm]
+ [<CommonParameters>]
 ```
 
 ### InputObject_SQL
 ```
 Remove-DSCPullServerAdminDevice -InputObject <DSCDevice> -SQLServer <String> [-Credential <PSCredential>]
  [-Database <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
+### Manual_ESE
+```
+Remove-DSCPullServerAdminDevice -TargetName <String> -ESEFilePath <String> [-WhatIf] [-Confirm]
+ [<CommonParameters>]
 ```
 
 ### Manual_SQL
@@ -32,7 +44,7 @@ Remove-DSCPullServerAdminDevice -TargetName <String> -SQLServer <String> [-Crede
 
 ### Manual_Connection
 ```
-Remove-DSCPullServerAdminDevice -TargetName <String> [-Connection <DSCPullServerSQLConnection>] [-WhatIf]
+Remove-DSCPullServerAdminDevice -TargetName <String> [-Connection <DSCPullServerConnection>] [-WhatIf]
  [-Confirm] [<CommonParameters>]
 ```
 
@@ -60,7 +72,7 @@ Pass in the device object to be removed from the database.
 
 ```yaml
 Type: DSCDevice
-Parameter Sets: InputObject_Connection, InputObject_SQL
+Parameter Sets: InputObject_Connection, InputObject_ESE, InputObject_SQL
 Aliases:
 
 Required: True
@@ -75,7 +87,7 @@ Define the TargetName of the device to be removed from the database.
 
 ```yaml
 Type: String
-Parameter Sets: Manual_SQL, Manual_Connection
+Parameter Sets: Manual_ESE, Manual_SQL, Manual_Connection
 Aliases:
 
 Required: True
@@ -92,13 +104,28 @@ unless one off the parameters for ad-hoc connections (ESEFilePath, SQLServer)
 is used in which case, an ad-hoc connection is created.
 
 ```yaml
-Type: DSCPullServerSQLConnection
+Type: DSCPullServerConnection
 Parameter Sets: InputObject_Connection, Manual_Connection
 Aliases:
 
 Required: False
 Position: Named
-Default value: (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL)
+Default value: (Get-DSCPullServerAdminConnection -OnlyShowActive)
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ESEFilePath
+Define the EDB file path to use an ad-hoc ESE connection.
+
+```yaml
+Type: String
+Parameter Sets: InputObject_ESE, Manual_ESE
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -180,7 +207,8 @@ Accept wildcard characters: False
 ```
 
 ### CommonParameters
-This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see about_CommonParameters (http://go.microsoft.com/fwlink/?LinkID=113216).
+This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable.
+For more information, see about_CommonParameters (http://go.microsoft.com/fwlink/?LinkID=113216).
 
 ## INPUTS
 

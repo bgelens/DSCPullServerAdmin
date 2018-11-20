@@ -49,6 +49,8 @@ Connect with SQL and Get, Set, Create and Remove data.
 
 All data can be copied over.
 
+**Note**, the function has been renamed to ```Copy-DSCPullServerAdminData``` as it is now capable of handling SQL to SQL, SQL to EDB, EDB to SQL and EDB to EDB
+
 ![edb2sql01](/images/edb2sql01.png)
 
 ![edb2sql02](/images/edb2sql02.png)

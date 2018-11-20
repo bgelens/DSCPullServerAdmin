@@ -131,13 +131,13 @@ function Set-DSCPullServerAdminStatusReport {
         [IPAddress[]] $IPAddress,
 
         [Parameter()]
-        [datetime] $StartTime,
+        [nullable[datetime]] $StartTime,
 
         [Parameter()]
-        [datetime] $EndTime,
+        [nullable[datetime]] $EndTime,
 
         [Parameter()]
-        [datetime] $LastModifiedTime,
+        [nullable[datetime]] $LastModifiedTime,
 
         [Parameter()]
         [PSObject[]] $Errors,

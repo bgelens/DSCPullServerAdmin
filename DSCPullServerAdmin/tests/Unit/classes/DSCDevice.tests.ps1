@@ -74,24 +74,24 @@ InModuleScope $moduleName {
             $instance2.ConfigurationID = [guid]::Empty
 
 
-            It 'Should create a SQLUpdateQuery with LastComplianceTime expected to be Null and LastHeartbeatTime expected to be 9999-12-31 23:59:59' {
+            It 'Should create a SQLUpdateQuery with LastComplianceTime expected to be NULL and LastHeartbeatTime expected to be 9999-12-31 23:59:59' {
                 $instance.GetSQLUpdate() |
                     Should -Be "UPDATE Devices Set ConfigurationID = '00000000-0000-0000-0000-000000000000',Dirty = 'False',LastComplianceTime = NULL,LastHeartbeatTime = '9999-12-31 23:59:59',NodeCompliant = 'False',ServerCheckSum = '',StatusCode = '0',TargetCheckSum = '' WHERE TargetName = 'bogusTargetName'"
             }
 
-            It 'Should create a SQLUpdateQuery with LastComplianceTime expected to be '''' and LastHeartbeatTime expected to be ''''' {
+            It 'Should create a SQLUpdateQuery with LastComplianceTime expected to be NULL and LastHeartbeatTime expected to be NULL' {
                 $instance2.GetSQLUpdate() |
-                    Should -Be "UPDATE Devices Set ConfigurationID = '00000000-0000-0000-0000-000000000000',Dirty = 'False',LastComplianceTime = '',LastHeartbeatTime = '',NodeCompliant = 'False',ServerCheckSum = '',StatusCode = '0',TargetCheckSum = '' WHERE TargetName = 'bogusTargetName'"
+                    Should -Be "UPDATE Devices Set ConfigurationID = '00000000-0000-0000-0000-000000000000',Dirty = 'False',LastComplianceTime = NULL,LastHeartbeatTime = NULL,NodeCompliant = 'False',ServerCheckSum = '',StatusCode = '0',TargetCheckSum = '' WHERE TargetName = 'bogusTargetName'"
             }
 
-            It 'Should create a SQLInsertQuery with LastComplianceTime expected to be Null and LastHeartbeatTime expected to be 9999-12-31 23:59:59' {
+            It 'Should create a SQLInsertQuery with LastComplianceTime expected to be NULL and LastHeartbeatTime expected to be 9999-12-31 23:59:59' {
                 $instance.GetSQLInsert() |
                     Should -Be "INSERT INTO Devices (ConfigurationID,Dirty,LastComplianceTime,LastHeartbeatTime,NodeCompliant,ServerCheckSum,StatusCode,TargetCheckSum,TargetName) VALUES ('00000000-0000-0000-0000-000000000000','False',NULL,'9999-12-31 23:59:59','False','','0','','bogusTargetName')"
             }
 
-            It 'Should create a SQLInsertQuery with LastComplianceTime expected to be '''' and LastHeartbeatTime expected to be ''''' {
+            It 'Should create a SQLInsertQuery with LastComplianceTime expected to be NULL and LastHeartbeatTime expected to be NULL' {
                 $instance2.GetSQLInsert() |
-                    Should -Be "INSERT INTO Devices (ConfigurationID,Dirty,LastComplianceTime,LastHeartbeatTime,NodeCompliant,ServerCheckSum,StatusCode,TargetCheckSum,TargetName) VALUES ('00000000-0000-0000-0000-000000000000','False','','','False','','0','','bogusTargetName')"
+                    Should -Be "INSERT INTO Devices (ConfigurationID,Dirty,LastComplianceTime,LastHeartbeatTime,NodeCompliant,ServerCheckSum,StatusCode,TargetCheckSum,TargetName) VALUES ('00000000-0000-0000-0000-000000000000','False',NULL,NULL,'False','','0','','bogusTargetName')"
             }
 
             It 'Should create a SQLDeleteQuery' {

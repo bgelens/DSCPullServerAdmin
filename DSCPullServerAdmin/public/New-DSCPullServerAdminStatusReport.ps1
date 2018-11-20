@@ -118,13 +118,13 @@ function New-DSCPullServerAdminStatusReport {
         [IPAddress[]] $IPAddress,
 
         [Parameter(ValueFromPipelineByPropertyName)]
-        [datetime] $StartTime,
+        [nullable[datetime]] $StartTime,
 
         [Parameter(ValueFromPipelineByPropertyName)]
-        [datetime] $EndTime,
+        [nullable[datetime]] $EndTime,
 
         [Parameter(ValueFromPipelineByPropertyName)]
-        [datetime] $LastModifiedTime,
+        [nullable[datetime]] $LastModifiedTime,
 
         [Parameter(ValueFromPipelineByPropertyName)]
         [PSObject[]] $Errors,

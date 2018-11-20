@@ -8,18 +8,19 @@ InModuleScope $moduleName {
     $sqlConnection.Active = $true
     $sqlConnection.Index = 0
 
-    $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
-    [void] $script:DSCPullServerConnections.Add($sqlConnection)
+    $eseConnection = [DSCPullServerESEConnection]::new()
+    $eseConnection.Index = 1
 
     $device = [DSCDevice]::new()
     $device.TargetName = 'bogusDevice'
 
-    Describe Remove-DSCPullServerAdminDevice {
-        Mock -CommandName PreProc -MockWith {
-            $sqlConnection
-        }
+    function GetDeviceFromEDB {
+        $script:GetConnection = $eseConnection
+        $device
+    }
 
-        It 'Should remove a device when it is passed in via InputObject (pipeline)' {
+    Describe Remove-DSCPullServerAdminDevice {
+        It 'Should remove a device when it is passed in via InputObject (pipeline) SQL' {
             Mock -CommandName Get-DSCPullServerAdminDevice
 
             Mock -CommandName Invoke-DSCPullServerSQLCommand -MockWith {
@@ -29,14 +30,39 @@ InModuleScope $moduleName {
                 Write-Verbose -Message $Script -Verbose
             }
 
+            Mock -CommandName Remove-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $sqlConnection
+            }
+
             $result = $device | Remove-DSCPullServerAdminDevice -Confirm:$false 4>&1
             $result | Should -Not -BeNullOrEmpty
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Remove-DSCPullServerESERecord -Exactly -Times 0 -Scope it
         }
 
-        It 'Should remove a device when TargetName was specified and device was found' {
+        It 'Should remove a device when it is passed in via InputObject (pipeline) ESE' {
+            Mock -CommandName Get-DSCPullServerAdminDevice
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Remove-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            GetDeviceFromEDB | Remove-DSCPullServerAdminDevice -Confirm:$false 4>&1
+
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Remove-DSCPullServerESERecord -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should remove a device when TargetName was specified and device was found (SQL)' {
             Mock -CommandName Get-DSCPullServerAdminDevice -MockWith {
                 $device
             }
@@ -48,25 +74,80 @@ InModuleScope $moduleName {
                 Write-Verbose -Message $Script -Verbose
             }
 
-            $result = Remove-DSCPullServerAdminDevice -TargetName 'bogusDevice' -Confirm:$false 4>&1
+            Mock -CommandName Remove-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $sqlConnection
+            }
+
+            $result = Remove-DSCPullServerAdminDevice -TargetName 'bogusDevice' -Connection $sqlConnection -Confirm:$false 4>&1
             $result | Should -Not -BeNullOrEmpty
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Remove-DSCPullServerESERecord -Exactly -Times 0 -Scope it
         }
 
-        It 'Should write a warning when TargetName was specified but device was not found' {
+        It 'Should remove a device when TargetName was specified and device was found (ESE)' {
+            Mock -CommandName Get-DSCPullServerAdminDevice -MockWith {
+                $device
+            }
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Remove-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            Remove-DSCPullServerAdminDevice -TargetName 'bogusDevice' -Connection $eseConnection -Confirm:$false 4>&1
+
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 2 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Remove-DSCPullServerESERecord -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should write a warning when TargetName was specified but device was not found (SQL)' {
             Mock -CommandName Get-DSCPullServerAdminDevice
 
             Mock -CommandName Invoke-DSCPullServerSQLCommand
 
             Mock -CommandName Write-Warning
 
+            Mock -CommandName Remove-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $sqlConnection
+            }
+
             Remove-DSCPullServerAdminDevice -TargetName 'bogusDevice'
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Write-Warning -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Remove-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+        }
+
+        It 'Should write a warning when TargetName was specified but device was not found (ESE)' {
+            Mock -CommandName Get-DSCPullServerAdminDevice
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Write-Warning
+
+            Mock -CommandName Remove-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            Remove-DSCPullServerAdminDevice -TargetName 'bogusDevice'
+
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Write-Warning -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Remove-DSCPullServerESERecord -Exactly -Times 0 -Scope it
         }
 
         It 'Should have ShouldProcess before calling Invoke-DSCPullServerSQLCommand' {
@@ -74,10 +155,35 @@ InModuleScope $moduleName {
 
             Mock -CommandName Invoke-DSCPullServerSQLCommand
 
+            Mock -CommandName Remove-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $sqlConnection
+            }
+
             $device | Remove-DSCPullServerAdminDevice -WhatIf
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Remove-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+        }
+
+        It 'Should have ShouldProcess before calling Remove-DSCPullServerESERecord' {
+            Mock -CommandName Get-DSCPullServerAdminDevice
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Remove-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            $device | Remove-DSCPullServerAdminDevice -WhatIf
+
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Remove-DSCPullServerESERecord -Exactly -Times 0 -Scope it
         }
     }
 }

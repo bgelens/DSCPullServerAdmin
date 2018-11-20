@@ -24,6 +24,10 @@ function Remove-DSCPullServerAdminConnection {
     if ($Connection.Active) {
         Write-Warning -Message 'Removing Current Active Connection, please select or add a new one'
     }
+    if ($Connection.Type -eq [DSCPullServerConnectionType]::ESE -and $null -ne $Connection.SessionId) {
+        Dismount-DSCPullServerESEDatabase -Connection $Connection
+    }
+
     for ($i = 0; $i -lt $script:DSCPullServerConnections.Count; $i++) {
         if ($script:DSCPullServerConnections[$i].Equals($Connection)) {
             $script:DSCPullServerConnections.RemoveAt($i)

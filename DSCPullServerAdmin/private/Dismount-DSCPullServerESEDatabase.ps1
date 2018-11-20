@@ -28,4 +28,5 @@ function Dismount-DSCPullServerESEDatabase {
     $Connection.Instance = $null
     $Connection.SessionId = $null
     $Connection.DbId = $null
+    $Connection.TableId = $null
 }

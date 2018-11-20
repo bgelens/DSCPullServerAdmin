@@ -89,7 +89,7 @@ FunctionsToExport = @(
     'Set-DSCPullServerAdminDevice',
     'Set-DSCPullServerAdminRegistration',
     'Set-DSCPullServerAdminStatusReport',
-    'Copy-DSCPullServerAdminDataESEToSQL',
+    'Copy-DSCPullServerAdminData',
     'New-DSCPullServerAdminSQLDatabase'
 )
 
@@ -126,7 +126,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = 'No changes, build pipeline update to create GitHub releases togheter with PSGallery Publishing'
+        ReleaseNotes = 'Implemented full EDB support (experimental): Set, Remove and New Device, Registration and StatusReport.'
 
     } # End of PSData hashtable
 

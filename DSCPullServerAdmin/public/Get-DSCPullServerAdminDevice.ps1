@@ -77,6 +77,8 @@ function Get-DSCPullServerAdminDevice {
         $Connection = PreProc -ParameterSetName $PSCmdlet.ParameterSetName @PSBoundParameters
         if ($null -eq $Connection) {
             break
+        } else {
+            $script:GetConnection = $Connection
         }
     }
     process {
@@ -84,6 +86,7 @@ function Get-DSCPullServerAdminDevice {
             ESE {
                 $eseParams = @{
                     Connection = $Connection
+                    Table = 'Devices'
                 }
                 if ($PSBoundParameters.ContainsKey('TargetName')) {
                     $eseParams.Add('TargetName', $TargetName)
@@ -92,7 +95,7 @@ function Get-DSCPullServerAdminDevice {
                     $eseParams.Add('ConfigurationID', $ConfigurationID)
                 }
 
-                Get-DSCPullServerESEDevice @eseParams
+                Get-DSCPullServerESERecord @eseParams
             }
             SQL {
                 $tsqlScript = 'SELECT * FROM Devices'
@@ -117,5 +120,8 @@ function Get-DSCPullServerAdminDevice {
                 }
             }
         }
+    }
+    end {
+        $script:GetConnection = $null
     }
 }

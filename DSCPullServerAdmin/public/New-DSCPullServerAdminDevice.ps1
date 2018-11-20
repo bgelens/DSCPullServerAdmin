@@ -63,36 +63,40 @@ function New-DSCPullServerAdminDevice {
         SupportsShouldProcess
     )]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [guid] $ConfigurationID,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [ValidateNotNullOrEmpty()]
         [string] $TargetName,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $ServerCheckSum,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string] $TargetCheckSum,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [bool] $NodeCompliant,
 
-        [Parameter()]
-        [datetime] $LastComplianceTime,
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [nullable[datetime]] $LastComplianceTime,
 
-        [Parameter()]
-        [datetime] $LastHeartbeatTime,
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [nullable[datetime]] $LastHeartbeatTime,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [bool] $Dirty,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [uint32] $StatusCode,
 
         [Parameter(ParameterSetName = 'Connection')]
-        [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
+        [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
+
+        [Parameter(Mandatory, ParameterSetName = 'ESE')]
+        [ValidateNotNullOrEmpty()]
+        [string] $ESEFilePath,
 
         [Parameter(Mandatory, ParameterSetName = 'SQL')]
         [ValidateNotNullOrEmpty()]
@@ -125,12 +129,29 @@ function New-DSCPullServerAdminDevice {
         $existingDevice = Get-DSCPullServerAdminDevice -Connection $Connection -TargetName $device.TargetName
         if ($null -ne $existingDevice) {
             throw "A Device with TargetName '$TargetName' already exists."
-        } else {
-            $tsqlScript = $device.GetSQLInsert()
         }
 
-        if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
-            Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+        switch ($Connection.Type) {
+            ESE {
+                if ($PSCmdlet.ShouldProcess($Connection.ESEFilePath)) {
+                    try {
+                        Mount-DSCPullServerESEDatabase -Connection $Connection -Mode None
+                        Open-DSCPullServerTable -Connection $Connection -Table 'Devices'
+                        Set-DSCPullServerESERecord -Connection $Connection -InputObject $device -Insert
+                    } catch {
+                        Write-Error -ErrorRecord $_ -ErrorAction Stop
+                    } finally {
+                        Dismount-DSCPullServerESEDatabase -Connection $Connection
+                    }
+                }
+            }
+            SQL {
+                $tsqlScript = $device.GetSQLInsert()
+
+                if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+                    Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                }
+            }
         }
     }
 }

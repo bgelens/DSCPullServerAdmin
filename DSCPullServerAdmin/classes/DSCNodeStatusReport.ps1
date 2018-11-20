@@ -19,11 +19,11 @@ class DSCNodeStatusReport {
 
     [IPAddress[]] $IPAddress
 
-    [datetime] $StartTime
+    [nullable[datetime]] $StartTime
 
-    [datetime] $EndTime
+    [nullable[datetime]] $EndTime
 
-    [datetime] $LastModifiedTime # Only applicable for ESENT, Not present in SQL
+    [nullable[datetime]] $LastModifiedTime # Only applicable for ESENT, Not present in SQL
 
     [PSObject[]] $Errors
 
@@ -77,12 +77,14 @@ class DSCNodeStatusReport {
                 } elseif ($_.Name -eq 'AdditionalData') {
                     "$($_.Name) = '[{0}]'" -f ($this."$($_.Name)" | ConvertTo-Json -Compress -Depth 100)
                 } else {
-                    if ($_.Definition.Split(' ')[0] -eq 'datetime') {
+                    if ($_.Definition.Split(' ')[0] -like '*datetime*' -and -not $null -eq $this."$($_.Name)") {
                         if ($this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss') -eq '0001-01-01 00:00:00') {
                             "$($_.Name) = NULL"
                         } else {
                             "$($_.Name) = '{0}'" -f $this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss')
                         }
+                    } elseif ($_.Definition.Split(' ')[0] -like '*nullable*' -and $null -eq $this."$($_.Name)") {
+                        "$($_.Name) = NULL"
                     } else {
                         "$($_.Name) = '{0}'" -f $this."$($_.Name)"
                     }
@@ -106,12 +108,14 @@ class DSCNodeStatusReport {
                 } elseif ($_.Name -eq 'AdditionalData') {
                     "'{0}'" -f ($this."$($_.Name)" | ConvertTo-Json -Compress -Depth 100)
                 } else {
-                    if ($_.Definition.Split(' ')[0] -eq 'datetime') {
+                    if ($_.Definition.Split(' ')[0] -like '*datetime*' -and -not $null -eq $this."$($_.Name)") {
                         if ($this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss') -eq '0001-01-01 00:00:00') {
                             'NULL'
                         } else {
                             "'{0}'" -f $this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss')
                         }
+                    } elseif ($_.Definition.Split(' ')[0] -like '*nullable*' -and $null -eq $this."$($_.Name)") {
+                        'NULL'
                     } else {
                         "'{0}'" -f $this."$($_.Name)"
                     }

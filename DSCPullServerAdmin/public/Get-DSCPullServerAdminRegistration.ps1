@@ -74,6 +74,8 @@ function Get-DSCPullServerAdminRegistration {
         $Connection = PreProc -ParameterSetName $PSCmdlet.ParameterSetName @PSBoundParameters
         if ($null -eq $Connection) {
             break
+        } else {
+            $script:GetConnection = $Connection
         }
     }
     process {
@@ -81,6 +83,7 @@ function Get-DSCPullServerAdminRegistration {
             ESE {
                 $eseParams = @{
                     Connection = $Connection
+                    Table = 'RegistrationData'
                 }
                 if ($PSBoundParameters.ContainsKey('AgentId')) {
                     $eseParams.Add('AgentId', $AgentId)
@@ -89,7 +92,7 @@ function Get-DSCPullServerAdminRegistration {
                     $eseParams.Add('NodeName', $NodeName)
                 }
 
-                Get-DSCPullServerESERegistration @eseParams
+                Get-DSCPullServerESERecord @eseParams
             }
             SQL {
                 $tsqlScript = 'SELECT * FROM RegistrationData'
@@ -114,5 +117,8 @@ function Get-DSCPullServerAdminRegistration {
                 }
             }
         }
+    }
+    end {
+        $script:GetConnection = $null
     }
 }

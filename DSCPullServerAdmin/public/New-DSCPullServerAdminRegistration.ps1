@@ -51,25 +51,29 @@ function New-DSCPullServerAdminRegistration {
         SupportsShouldProcess
     )]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [guid] $AgentId,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [ValidateSet('2.0')]
         [string] $LCMVersion = '2.0',
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [ValidateNotNullOrEmpty()]
         [string] $NodeName,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [IPAddress[]] $IPAddress,
 
-        [Parameter()]
+        [Parameter(ValueFromPipelineByPropertyName)]
         [string[]] $ConfigurationNames,
 
         [Parameter(ParameterSetName = 'Connection')]
-        [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
+        [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
+
+        [Parameter(Mandatory, ParameterSetName = 'ESE')]
+        [ValidateNotNullOrEmpty()]
+        [string] $ESEFilePath,
 
         [Parameter(Mandatory, ParameterSetName = 'SQL')]
         [ValidateNotNullOrEmpty()]
@@ -105,12 +109,29 @@ function New-DSCPullServerAdminRegistration {
         $existingRegistration = Get-DSCPullServerAdminRegistration -Connection $Connection -AgentId $nodeRegistration.AgentId
         if ($null -ne $existingRegistration) {
             throw "A NodeRegistration with AgentId '$AgentId' already exists."
-        } else {
-            $tsqlScript = $nodeRegistration.GetSQLInsert()
         }
 
-        if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
-            Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+        switch ($Connection.Type) {
+            ESE {
+                if ($PSCmdlet.ShouldProcess($Connection.ESEFilePath)) {
+                    try {
+                        Mount-DSCPullServerESEDatabase -Connection $Connection -Mode None
+                        Open-DSCPullServerTable -Connection $Connection -Table 'RegistrationData'
+                        Set-DSCPullServerESERecord -Connection $Connection -InputObject $nodeRegistration -Insert
+                    } catch {
+                        Write-Error -ErrorRecord $_ -ErrorAction Stop
+                    } finally {
+                        Dismount-DSCPullServerESEDatabase -Connection $Connection
+                    }
+                }
+            }
+            SQL {
+                $tsqlScript = $nodeRegistration.GetSQLInsert()
+
+                if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+                    Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                }
+            }
         }
     }
 }

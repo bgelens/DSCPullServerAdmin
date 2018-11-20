@@ -5,7 +5,7 @@
     .DESCRIPTION
     LCMv2 (WMF5+ / PowerShell 5+) pull clients send information
     to the Pull Server which stores their data in the registrationdata table.
-    This function will allow for manual overwrites of registrations properteis
+    This function will allow for manual overwrites of registrations properties
     in the registrationdata table.
 
     .PARAMETER InputObject
@@ -59,10 +59,12 @@ function Set-DSCPullServerAdminRegistration {
     param (
         [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_Connection')]
         [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_SQL')]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_ESE')]
         [DSCNodeRegistration] $InputObject,
 
         [Parameter(Mandatory, ParameterSetName = 'Manual_Connection')]
         [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_ESE')]
         [guid] $AgentId,
 
         [Parameter()]
@@ -81,7 +83,12 @@ function Set-DSCPullServerAdminRegistration {
 
         [Parameter(ParameterSetName = 'InputObject_Connection')]
         [Parameter(ParameterSetName = 'Manual_Connection')]
-        [DSCPullServerSQLConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL),
+        [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
+
+        [Parameter(Mandatory, ParameterSetName = 'InputObject_ESE')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_ESE')]
+        [ValidateNotNullOrEmpty()]
+        [string] $ESEFilePath,
 
         [Parameter(Mandatory, ParameterSetName = 'InputObject_SQL')]
         [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
@@ -99,8 +106,12 @@ function Set-DSCPullServerAdminRegistration {
     )
 
     begin {
-        if ($null -ne $Connection -and -not $PSBoundParameters.ContainsKey('Connection')) {
+        if ($null -ne $Connection -and -not $PSBoundParameters.ContainsKey('Connection') -and $null -eq $script:GetConnection) {
             [void] $PSBoundParameters.Add('Connection', $Connection)
+        } elseif ($null -ne $script:GetConnection -and -not $PSBoundParameters.ContainsKey('Connection')) {
+            [void] $PSBoundParameters.Add('Connection', $script:GetConnection)
+        } elseif ($null -ne $script:GetConnection) {
+            $PSBoundParameters.Connection = $script:GetConnection
         }
         $Connection = PreProc -ParameterSetName $PSCmdlet.ParameterSetName @PSBoundParameters
         if ($null -eq $Connection) {
@@ -125,10 +136,24 @@ function Set-DSCPullServerAdminRegistration {
             }
         }
 
-        $tsqlScript = $existingRegistration.GetSQLUpdate()
+        switch ($Connection.Type) {
+            ESE {
+                if ($PSCmdlet.ShouldProcess($Connection.ESEFilePath)) {
+                    if ($PSCmdlet.MyInvocation.PipelinePosition -gt 1) {
+                        Set-DSCPullServerESERecord -Connection $Connection -InputObject $existingRegistration
+                    } else {
+                        Get-DSCPullServerAdminRegistration -Connection $Connection -AgentId $existingRegistration.AgentId |
+                            Set-DSCPullServerESERecord -Connection $Connection -InputObject $existingRegistration
+                    }
+                }
+            }
+            SQL {
+                $tsqlScript = $existingRegistration.GetSQLUpdate()
 
-        if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
-            Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
+                    Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                }
+            }
         }
     }
 }

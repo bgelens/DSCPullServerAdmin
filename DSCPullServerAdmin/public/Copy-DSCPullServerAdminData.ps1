@@ -132,7 +132,7 @@ function Copy-DSCPullServerAdminData {
             }
         }
         StatusReports {
-            $reports = Get-DSCPullServerAdminStatusReport -Connection $Connection1
+            $reports = Get-DSCPullServerAdminStatusReport -Connection $Connection1 -All
             foreach ($r in $reports) {
                 $con2Rep = Get-DSCPullServerAdminStatusReport -Connection $Connection2 -JobId $r.JobId
                 if ($null -eq $con2Rep) {

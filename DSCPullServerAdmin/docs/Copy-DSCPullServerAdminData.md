@@ -5,25 +5,25 @@ online version:
 schema: 2.0.0
 ---
 
-# Copy-DSCPullServerAdminDataESEToSQL
+# Copy-DSCPullServerAdminData
 
 ## SYNOPSIS
-Copy data from EDB to SQL.
+Copy data between 2 Database connections
 
 ## SYNTAX
 
 ```
-Copy-DSCPullServerAdminDataESEToSQL [-ESEConnection] <DSCPullServerESEConnection>
- [-SQLConnection] <DSCPullServerSQLConnection> [-ObjectsToMigrate] <String[]> [-Force] [-WhatIf] [-Confirm]
- [<CommonParameters>]
+Copy-DSCPullServerAdminData [-Connection1] <DSCPullServerConnection> [-Connection2] <DSCPullServerConnection>
+ [-ObjectsToMigrate] <String[]> [-Force] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
 This function allows for data to be copied over from
-an ESE (edb) connection to a SQL connection.
+a connection to another connection.
 This allows
-a user to migrate over from an ESENT type Pull Server to
-a SQL type Pull Server without loosing data.
+a user to migrate over data from an ESENT type Pull Server to
+a SQL type Pull Server, SQL to SQL type Pull Server, SQL to ESENT type
+Pull Server and ESENT to ESENT Type Pull Server without loosing data.
 
 ## EXAMPLES
 
@@ -32,17 +32,17 @@ a SQL type Pull Server without loosing data.
 $eseConnection = New-DSCPullServerAdminConnection -ESEFilePath C:\EDB\Devices.edb
 ```
 
-$sqlConnection = New-DSCPullServerAdminSQLDatabase -SQLServer sqlserver\instance -Name dsc -Credential sa
+$sqlConnection = New-DSCPullServerAdminConnection -SQLServer sqlserver\instance -Database dsc -Credential sa
 
-Copy-DSCPullServerAdminDataESEToSQL -ObjectsToMigrate Devices, RegistrationData, StatusReports -Force
+Copy-DSCPullServerAdminData -ObjectsToMigrate Devices, RegistrationData, StatusReports -Connection1 $eseConnection -Connection2 $sqlConnection -Force
 
 ## PARAMETERS
 
-### -ESEConnection
-A specifically passed in ESE connection to migrate data out of.
+### -Connection1
+A specifically passed in Connection to migrate data out of.
 
 ```yaml
-Type: DSCPullServerESEConnection
+Type: DSCPullServerConnection
 Parameter Sets: (All)
 Aliases:
 
@@ -53,11 +53,11 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -SQLConnection
-A specifically passed in SQL connection to migrate data in to.
+### -Connection2
+A specifically passed in Connection to migrate data in to.
 
 ```yaml
-Type: DSCPullServerSQLConnection
+Type: DSCPullServerConnection
 Parameter Sets: (All)
 Aliases:
 
@@ -79,13 +79,13 @@ Aliases:
 
 Required: True
 Position: 3
-Default value: @('Devices', 'RegistrationData')
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -Force
-When specified, existing records in SQL will be overwritten.
+When specified, existing records in the target database will be overwritten.
 When not specified
 existing data will not be overwritten and Warnings will be provided to inform
 the user.
@@ -134,7 +134,8 @@ Accept wildcard characters: False
 ```
 
 ### CommonParameters
-This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see about_CommonParameters (http://go.microsoft.com/fwlink/?LinkID=113216).
+This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable.
+For more information, see about_CommonParameters (http://go.microsoft.com/fwlink/?LinkID=113216).
 
 ## INPUTS
 

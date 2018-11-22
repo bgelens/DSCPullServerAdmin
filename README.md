@@ -7,9 +7,9 @@ master|dev|psgallery
 
 A module to work with the DSC PullServer EDB (ESENT) and SQL database and provide a better Admin oriented Pull Server experience.
 
-> The module until version 0.0.0.6 was written in C# and was able to work with the EDB with more scenario's than currently supported by the newer module versions (which are now fully implemented as script). If you are looking to remove / modify data in the EDB, you can use that earlier version (at your own risk). I expect to add additional EDB functionality to the newer modules later. Please create an issue if this is important for you!
+**Update 11/20/2018:** As of version 0.3.0, the module is able to handle the EDB with all features again. Get/Set/Remove/New is (in experimental) support!
 
-The module enables you to move data from the EDB database to a SQL database. This allows you to "upgrade" your Pull Server implementation to make use of the SQL backend introduced in Windows Server RS4 (1803) and Server 2019.
+The module enables you to move data from the EDB database to a SQL database. This allows you to "upgrade" your Pull Server implementation to make use of the SQL backend introduced in Windows Server RS4 (1803) and Server 2019. It ais also capable of doing migrations from SQL to SQL and EDB to SQL as of version 0.3.0!
 
 The module supports accessing, manipulating, removing Devices (Legacy LCMv1, ConfigurationId), Registrations (LCMv2, AgentId) and StatusReports (LCMv2). All this data can be easily moved over to SQL as well.
 

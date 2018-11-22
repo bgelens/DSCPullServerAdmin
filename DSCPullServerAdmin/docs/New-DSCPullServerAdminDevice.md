@@ -17,7 +17,15 @@ Create device entries (LCMv1) in a Pull Server Database.
 New-DSCPullServerAdminDevice -ConfigurationID <Guid> -TargetName <String> [-ServerCheckSum <String>]
  [-TargetCheckSum <String>] [-NodeCompliant <Boolean>] [-LastComplianceTime <DateTime>]
  [-LastHeartbeatTime <DateTime>] [-Dirty <Boolean>] [-StatusCode <UInt32>]
- [-Connection <DSCPullServerSQLConnection>] [-WhatIf] [-Confirm] [<CommonParameters>]
+ [-Connection <DSCPullServerConnection>] [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
+### ESE
+```
+New-DSCPullServerAdminDevice -ConfigurationID <Guid> -TargetName <String> [-ServerCheckSum <String>]
+ [-TargetCheckSum <String>] [-NodeCompliant <Boolean>] [-LastComplianceTime <DateTime>]
+ [-LastHeartbeatTime <DateTime>] [-Dirty <Boolean>] [-StatusCode <UInt32>] -ESEFilePath <String> [-WhatIf]
+ [-Confirm] [<CommonParameters>]
 ```
 
 ### SQL
@@ -54,7 +62,7 @@ Aliases:
 Required: True
 Position: Named
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
@@ -69,7 +77,7 @@ Aliases:
 Required: True
 Position: Named
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
@@ -84,7 +92,7 @@ Aliases:
 Required: False
 Position: Named
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
@@ -99,7 +107,7 @@ Aliases:
 Required: False
 Position: Named
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
@@ -114,7 +122,7 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
@@ -129,7 +137,7 @@ Aliases:
 Required: False
 Position: Named
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
@@ -144,7 +152,7 @@ Aliases:
 Required: False
 Position: Named
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
@@ -159,7 +167,7 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
@@ -174,7 +182,7 @@ Aliases:
 Required: False
 Position: Named
 Default value: 0
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
@@ -185,13 +193,28 @@ unless one off the parameters for ad-hoc connections (ESEFilePath, SQLServer)
 is used in which case, an ad-hoc connection is created.
 
 ```yaml
-Type: DSCPullServerSQLConnection
+Type: DSCPullServerConnection
 Parameter Sets: Connection
 Aliases:
 
 Required: False
 Position: Named
-Default value: (Get-DSCPullServerAdminConnection -OnlyShowActive -Type SQL)
+Default value: (Get-DSCPullServerAdminConnection -OnlyShowActive)
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ESEFilePath
+Define the EDB file path to use an ad-hoc ESE connection.
+
+```yaml
+Type: String
+Parameter Sets: ESE
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -273,7 +296,8 @@ Accept wildcard characters: False
 ```
 
 ### CommonParameters
-This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see about_CommonParameters (http://go.microsoft.com/fwlink/?LinkID=113216).
+This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable.
+For more information, see about_CommonParameters (http://go.microsoft.com/fwlink/?LinkID=113216).
 
 ## INPUTS
 

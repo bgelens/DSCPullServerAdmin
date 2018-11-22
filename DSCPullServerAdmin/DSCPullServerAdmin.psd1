@@ -126,7 +126,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = 'Implemented full EDB support (experimental): Set, Remove and New Device, Registration and StatusReport.'
+        ReleaseNotes = 'Fix where Copy-DSCPullServerAdmin would only copy 5 StatusReports. Now copies all'
 
     } # End of PSData hashtable
 

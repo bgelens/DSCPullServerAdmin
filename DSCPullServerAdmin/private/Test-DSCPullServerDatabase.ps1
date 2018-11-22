@@ -1,8 +1,8 @@
-function Test-DSCPullServerESEDatabase {
+function Test-DSCPullServerDatabase {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
-        [DSCPullServerESEConnection] $Connection
+        [DSCPullServerConnection] $Connection
     )
     $expectedTableNames = @(
         'Devices',
@@ -10,7 +10,17 @@ function Test-DSCPullServerESEDatabase {
         'StatusReport'
     )
 
-    $tableNames = Get-DSCPullServerESETable -Connection $connection
+    $tableNames = switch ($Connection.Type) {
+        SQL {
+            Get-DSCPullServerSQLTable -Connection $connection
+        }
+        ESE {
+            Get-DSCPullServerESETable -Connection $connection
+        }
+        MDB {
+            Get-DSCPullServerMDBTable -Connection $connection
+        }
+    }
     Write-Verbose -Message "Database Tables: $($tableNames -join ', ' | Out-String)"
 
     $result = $true

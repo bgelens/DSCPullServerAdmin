@@ -19,10 +19,17 @@ Set-DSCPullServerAdminRegistration -InputObject <DSCNodeRegistration> [-LCMVersi
  [-Connection <DSCPullServerConnection>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
+### InputObject_MDB
+```
+Set-DSCPullServerAdminRegistration -InputObject <DSCNodeRegistration> [-LCMVersion <String>]
+ [-NodeName <String>] [-IPAddress <IPAddress[]>] [-ConfigurationNames <String[]>] -MDBFilePath <FileInfo>
+ [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
 ### InputObject_ESE
 ```
 Set-DSCPullServerAdminRegistration -InputObject <DSCNodeRegistration> [-LCMVersion <String>]
- [-NodeName <String>] [-IPAddress <IPAddress[]>] [-ConfigurationNames <String[]>] -ESEFilePath <String>
+ [-NodeName <String>] [-IPAddress <IPAddress[]>] [-ConfigurationNames <String[]>] -ESEFilePath <FileInfo>
  [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
@@ -33,10 +40,17 @@ Set-DSCPullServerAdminRegistration -InputObject <DSCNodeRegistration> [-LCMVersi
  [-Credential <PSCredential>] [-Database <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
+### Manual_MDB
+```
+Set-DSCPullServerAdminRegistration -AgentId <Guid> [-LCMVersion <String>] [-NodeName <String>]
+ [-IPAddress <IPAddress[]>] [-ConfigurationNames <String[]>] -MDBFilePath <FileInfo> [-WhatIf] [-Confirm]
+ [<CommonParameters>]
+```
+
 ### Manual_ESE
 ```
 Set-DSCPullServerAdminRegistration -AgentId <Guid> [-LCMVersion <String>] [-NodeName <String>]
- [-IPAddress <IPAddress[]>] [-ConfigurationNames <String[]>] -ESEFilePath <String> [-WhatIf] [-Confirm]
+ [-IPAddress <IPAddress[]>] [-ConfigurationNames <String[]>] -ESEFilePath <FileInfo> [-WhatIf] [-Confirm]
  [<CommonParameters>]
 ```
 
@@ -79,7 +93,7 @@ Pass in the registration object to be modified from the database.
 
 ```yaml
 Type: DSCNodeRegistration
-Parameter Sets: InputObject_Connection, InputObject_ESE, InputObject_SQL
+Parameter Sets: InputObject_Connection, InputObject_MDB, InputObject_ESE, InputObject_SQL
 Aliases:
 
 Required: True
@@ -94,7 +108,7 @@ Modify properties for the registration with specified AgentId.
 
 ```yaml
 Type: Guid
-Parameter Sets: Manual_ESE, Manual_SQL, Manual_Connection
+Parameter Sets: Manual_MDB, Manual_ESE, Manual_SQL, Manual_Connection
 Aliases:
 
 Required: True
@@ -186,8 +200,23 @@ Accept wildcard characters: False
 Define the EDB file path to use an ad-hoc ESE connection.
 
 ```yaml
-Type: String
+Type: FileInfo
 Parameter Sets: InputObject_ESE, Manual_ESE
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MDBFilePath
+Define the MDB file path to use an ad-hoc MDB connection.
+
+```yaml
+Type: FileInfo
+Parameter Sets: InputObject_MDB, Manual_MDB
 Aliases:
 
 Required: True

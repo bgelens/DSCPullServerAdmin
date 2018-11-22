@@ -14,6 +14,15 @@ InModuleScope $moduleName {
     $device = [DSCDevice]::new()
     $device.TargetName = 'bogusDevice'
     $device.ConfigurationID = ([guid]::Empty)
+    $device.ServerCheckSum = 'serverCheckSum'
+    $device.TargetCheckSum = 'targetCheckSum'
+
+    $newDeviceArgs = @{
+        TargetName = 'bogusDevice'
+        ConfigurationID = ([guid]::Empty)
+        ServerCheckSum = 'serverCheckSum'
+        TargetCheckSum = 'targetCheckSum'
+    }
 
     Describe New-DSCPullServerAdminDevice {
         It 'Should create a device when TargetName specified did not result in device already found (SQL)' {
@@ -35,7 +44,7 @@ InModuleScope $moduleName {
             Mock -CommandName Set-DSCPullServerESERecord
             Mock -CommandName Dismount-DSCPullServerESEDatabase
 
-            New-DSCPullServerAdminDevice -TargetName 'bogusDevice' -ConfigurationID ([guid]::Empty) -Confirm:$false 4>&1
+            New-DSCPullServerAdminDevice @newDeviceArgs -Confirm:$false 4>&1
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
@@ -59,7 +68,7 @@ InModuleScope $moduleName {
             Mock -CommandName Set-DSCPullServerESERecord
             Mock -CommandName Dismount-DSCPullServerESEDatabase
 
-            New-DSCPullServerAdminDevice -TargetName 'bogusDevice' -ConfigurationID ([guid]::Empty) -Confirm:$false 4>&1
+            New-DSCPullServerAdminDevice @newDeviceArgs -Confirm:$false 4>&1
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
@@ -85,7 +94,7 @@ InModuleScope $moduleName {
             Mock -CommandName Set-DSCPullServerESERecord
             Mock -CommandName Dismount-DSCPullServerESEDatabase
 
-            { New-DSCPullServerAdminDevice -TargetName 'bogusDevice' -ConfigurationID ([guid]::Empty) } |
+            { New-DSCPullServerAdminDevice @newDeviceArgs } |
                 Should -Throw
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 1 -Scope it
@@ -110,7 +119,7 @@ InModuleScope $moduleName {
             Mock -CommandName Set-DSCPullServerESERecord
             Mock -CommandName Dismount-DSCPullServerESEDatabase
 
-            New-DSCPullServerAdminDevice -TargetName 'bogusDevice' -ConfigurationID ([guid]::Empty) -Connection $sqlConnection -WhatIf
+            New-DSCPullServerAdminDevice @newDeviceArgs -Connection $sqlConnection -WhatIf
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
@@ -134,7 +143,7 @@ InModuleScope $moduleName {
             Mock -CommandName Set-DSCPullServerESERecord
             Mock -CommandName Dismount-DSCPullServerESEDatabase
 
-            New-DSCPullServerAdminDevice -TargetName 'bogusDevice' -ConfigurationID ([guid]::Empty) -Connection $eseConnection -WhatIf
+            New-DSCPullServerAdminDevice @newDeviceArgs -Connection $eseConnection -WhatIf
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
@@ -162,7 +171,7 @@ InModuleScope $moduleName {
             Mock -CommandName Set-DSCPullServerESERecord
             Mock -CommandName Dismount-DSCPullServerESEDatabase
 
-            New-DSCPullServerAdminDevice -TargetName 'bogusDevice' -ConfigurationID ([guid]::Empty)
+            New-DSCPullServerAdminDevice @newDeviceArgs
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminDevice -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it

@@ -1,8 +1,8 @@
-function Invoke-DSCPullServerSQLCommand {
+function Invoke-DSCPullServerMDBCommand {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [DSCPullServerSQLConnection] $Connection,
+        [DSCPullServerMDBConnection] $Connection,
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -12,25 +12,21 @@ function Invoke-DSCPullServerSQLCommand {
         [ValidateSet('Get', 'Set')]
         [string] $CommandType = 'Get',
 
-        [Parameter()]
-        [uint16] $CommandTimeOut = 30,
-
         [Parameter(ValueFromRemainingArguments, DontShow)]
         $DroppedParams
     )
     begin {
         try {
-            $sqlConnection = [System.Data.SqlClient.SqlConnection]::new($Connection.ConnectionString())
-            $sqlConnection.Open()
+            $mdbConnection = [System.Data.OleDb.OleDbConnection]::new($Connection.ConnectionString())
+            $mdbConnection.Open()
         } catch {
             Write-Error -ErrorRecord $_ -ErrorAction Stop
         }
     }
     process {
         try {
-            $command = $sqlConnection.CreateCommand()
+            $command = $mdbConnection.CreateCommand()
             $command.CommandText = $Script
-            $command.CommandTimeout = $CommandTimeOut
 
             Write-Verbose ("Invoking command: {0}" -f $Script)
 
@@ -43,13 +39,13 @@ function Invoke-DSCPullServerSQLCommand {
             Write-Error -ErrorRecord $_ -ErrorAction Stop
         } finally {
             if ($false -eq $?) {
-                $sqlConnection.Close()
-                $sqlConnection.Dispose()
+                $mdbConnection.Close()
+                $mdbConnection.Dispose()
             }
         }
     }
     end {
-        $sqlConnection.Close()
-        $sqlConnection.Dispose()
+        $mdbConnection.Close()
+        $mdbConnection.Dispose()
     }
 }

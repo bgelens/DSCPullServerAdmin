@@ -13,6 +13,7 @@
 
     .PARAMETER NodeName
     Return the registation with the specific NodeName (Non-key, could be more than 1 result).
+    Wildcards are supported for SQL and ESE connections but not for MDB connection.
 
     .PARAMETER Connection
     Accepts a specific Connection to be passed to target a specific database.
@@ -22,6 +23,9 @@
 
     .PARAMETER ESEFilePath
     Define the EDB file path to use an ad-hoc ESE connection.
+
+    .PARAMETER MDBFilePath
+    Define the MDB file path to use an ad-hoc MDB connection.
 
     .PARAMETER SQLServer
     Define the SQL Instance to use in an ad-hoc SQL connection.
@@ -51,8 +55,12 @@ function Get-DSCPullServerAdminRegistration {
         [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
 
         [Parameter(Mandatory, ParameterSetName = 'ESE')]
-        [ValidateNotNullOrEmpty()]
-        [string] $ESEFilePath,
+        [ValidateScript({$_ | Assert-DSCPullServerDatabaseFilePath -Type 'ESE'})]
+        [System.IO.FileInfo] $ESEFilePath,
+
+        [Parameter(Mandatory, ParameterSetName = 'MDB')]
+        [ValidateScript({$_ | Assert-DSCPullServerDatabaseFilePath -Type 'MDB'})]
+        [System.IO.FileInfo] $MDBFilePath,
 
         [Parameter(Mandatory, ParameterSetName = 'SQL')]
         [ValidateNotNullOrEmpty()]
@@ -109,6 +117,32 @@ function Get-DSCPullServerAdminRegistration {
                 }
 
                 Invoke-DSCPullServerSQLCommand -Connection $Connection -Script $tsqlScript | ForEach-Object {
+                    try {
+                        [DSCNodeRegistration]::New($_)
+                    } catch {
+                        Write-Error -ErrorRecord $_ -ErrorAction Continue
+                    }
+                }
+            }
+            MDB {
+                $tsqlScript = 'SELECT * FROM RegistrationData'
+                $filters = [System.Collections.ArrayList]::new()
+                if ($PSBoundParameters.ContainsKey('AgentId')) {
+                    [void] $filters.Add(("AgentId = '{0}'" -f $AgentId))
+                }
+                if ($PSBoundParameters.ContainsKey("NodeName")) {
+                    if ([System.Management.Automation.WildcardPattern]::ContainsWildcardCharacters($NodeName)) {
+                        Write-Error -Message "MDB connection does not support wildcards for NodeName" -ErrorAction Stop
+                    } else {
+                        [void] $filters.Add(("NodeName = '{0}'" -f $NodeName))
+                    }
+                }
+
+                if ($filters.Count -ge 1) {
+                    $tsqlScript += " WHERE {0}" -f ($filters -join ' AND ')
+                }
+
+                Invoke-DSCPullServerMDBCommand -Connection $Connection -Script $tsqlScript | ForEach-Object {
                     try {
                         [DSCNodeRegistration]::New($_)
                     } catch {

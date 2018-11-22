@@ -71,6 +71,9 @@
     .PARAMETER ESEFilePath
     Define the EDB file path to use an ad-hoc ESE connection.
 
+    .PARAMETER MDBFilePath
+    Define the MDB file path to use an ad-hoc MDB connection.
+
     .PARAMETER SQLServer
     Define the SQL Instance to use in an ad-hoc SQL connection.
 
@@ -96,11 +99,13 @@ function Set-DSCPullServerAdminStatusReport {
         [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_Connection')]
         [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_SQL')]
         [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_ESE')]
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'InputObject_MDB')]
         [DSCNodeStatusReport] $InputObject,
 
         [Parameter(Mandatory, ParameterSetName = 'Manual_Connection')]
         [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
         [Parameter(Mandatory, ParameterSetName = 'Manual_ESE')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_MDB')]
         [guid] $JobId,
 
         [Parameter()]
@@ -157,8 +162,13 @@ function Set-DSCPullServerAdminStatusReport {
 
         [Parameter(Mandatory, ParameterSetName = 'InputObject_ESE')]
         [Parameter(Mandatory, ParameterSetName = 'Manual_ESE')]
-        [ValidateNotNullOrEmpty()]
-        [string] $ESEFilePath,
+        [ValidateScript({$_ | Assert-DSCPullServerDatabaseFilePath -Type 'ESE'})]
+        [System.IO.FileInfo] $ESEFilePath,
+
+        [Parameter(Mandatory, ParameterSetName = 'InputObject_MDB')]
+        [Parameter(Mandatory, ParameterSetName = 'Manual_MDB')]
+        [ValidateScript({$_ | Assert-DSCPullServerDatabaseFilePath -Type 'MDB'})]
+        [System.IO.FileInfo] $MDBFilePath,
 
         [Parameter(Mandatory, ParameterSetName = 'InputObject_SQL')]
         [Parameter(Mandatory, ParameterSetName = 'Manual_SQL')]
@@ -221,6 +231,13 @@ function Set-DSCPullServerAdminStatusReport {
 
                 if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
                     Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                }
+            }
+            MDB {
+                $tsqlScript = $existingReport.GetMDBUpdate()
+
+                if ($PSCmdlet.ShouldProcess($Connection.MDBFilePath)) {
+                    Invoke-DSCPullServerMDBCommand -Connection $Connection -CommandType Set -Script $tsqlScript
                 }
             }
         }

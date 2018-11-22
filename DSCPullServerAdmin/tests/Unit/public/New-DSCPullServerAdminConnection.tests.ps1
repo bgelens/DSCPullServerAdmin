@@ -11,7 +11,7 @@ InModuleScope $moduleName {
 
         It 'Should assign index 0 when no previous connecions are in module var DSCPullServerConnections' {
             Mock -CommandName Get-DSCPullServerAdminConnection
-            Mock -CommandName Test-DSCPullServerESEDatabase -MockWith {
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
                 $true
             }
 
@@ -30,7 +30,7 @@ InModuleScope $moduleName {
                 $sqlConnection
             }
 
-            Mock -CommandName Test-DSCPullServerESEDatabase -MockWith {
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
                 $true
             }
 
@@ -43,7 +43,7 @@ InModuleScope $moduleName {
 
         It 'Should not add to module var DSCPullServerConnections when DontStore is specified' {
             Mock -CommandName Get-DSCPullServerAdminConnection
-            Mock -CommandName Test-DSCPullServerESEDatabase -MockWith {
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
                 $true
             }
 
@@ -56,6 +56,10 @@ InModuleScope $moduleName {
             Mock -CommandName Get-DSCPullServerAdminConnection
 
             Mock -CommandName Test-DSCPullServerDatabaseExist -MockWith {
+                $true
+            }
+
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
                 $true
             }
 
@@ -75,6 +79,10 @@ InModuleScope $moduleName {
                 $true
             }
 
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
+                $true
+            }
+
             $result = New-DSCPullServerAdminConnection -SQLServer 'Server\Instance' -Database 'DSCDB' -Credential ([pscredential]::new('sa', [securestring]::new()))
             $result.Index | Should -Be 0
             $result.Type | Should -Be 'SQL'
@@ -88,6 +96,10 @@ InModuleScope $moduleName {
             Mock -CommandName Get-DSCPullServerAdminConnection
 
             Mock -CommandName Test-DSCPullServerDatabaseExist -MockWith {
+                $true
+            }
+
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
                 $true
             }
 
@@ -107,6 +119,10 @@ InModuleScope $moduleName {
                 $true
             }
 
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
+                $true
+            }
+
             $result = New-DSCPullServerAdminConnection -SQLServer 'Server\Instance'
             $result.Index | Should -Be 0
             $result.Type | Should -Be 'SQL'
@@ -120,6 +136,23 @@ InModuleScope $moduleName {
             Mock -CommandName Get-DSCPullServerAdminConnection
 
             Mock -CommandName Test-DSCPullServerDatabaseExist -MockWith {
+                $false
+            }
+
+            { New-DSCPullServerAdminConnection -SQLServer 'Server\Instance' } |
+                Should -Throw
+
+            $script:DSCPullServerConnections | Should -BeNullOrEmpty
+        }
+
+        It 'Should throw when expected tables are not found' {
+            Mock -CommandName Get-DSCPullServerAdminConnection
+
+            Mock -CommandName Test-DSCPullServerDatabaseExist -MockWith {
+                $true
+            }
+
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
                 $false
             }
 

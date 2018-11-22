@@ -23,7 +23,14 @@ Get-DSCPullServerAdminStatusReport [-AgentId <Guid>] [-NodeName <String>] [-JobI
 ```
 Get-DSCPullServerAdminStatusReport [-AgentId <Guid>] [-NodeName <String>] [-JobId <Guid>]
  [-FromStartTime <DateTime>] [-ToStartTime <DateTime>] [-All] [-Top <UInt16>] [-OperationType <String>]
- -ESEFilePath <String> [<CommonParameters>]
+ -ESEFilePath <FileInfo> [<CommonParameters>]
+```
+
+### MDB
+```
+Get-DSCPullServerAdminStatusReport [-AgentId <Guid>] [-NodeName <String>] [-JobId <Guid>]
+ [-FromStartTime <DateTime>] [-ToStartTime <DateTime>] [-All] [-Top <UInt16>] [-OperationType <String>]
+ -MDBFilePath <FileInfo> [<CommonParameters>]
 ```
 
 ### SQL
@@ -192,8 +199,23 @@ Accept wildcard characters: False
 Define the EDB file path to use an ad-hoc ESE connection.
 
 ```yaml
-Type: String
+Type: FileInfo
 Parameter Sets: ESE
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MDBFilePath
+Define the MDB file path to use an ad-hoc MDB connection.
+
+```yaml
+Type: FileInfo
+Parameter Sets: MDB
 Aliases:
 
 Required: True
@@ -257,7 +279,6 @@ For more information, see about_CommonParameters (http://go.microsoft.com/fwlink
 ## OUTPUTS
 
 ### DSCNodeStatusReport
-
 ## NOTES
 
 ## RELATED LINKS

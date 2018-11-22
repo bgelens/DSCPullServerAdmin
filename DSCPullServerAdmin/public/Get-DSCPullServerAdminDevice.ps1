@@ -10,6 +10,7 @@
 
     .PARAMETER TargetName
     Return the device with the specific TargetName.
+    Wildcards are supported for SQL and ESE connections but not for MDB connection.
 
     .PARAMETER ConfigurationID
     Return all devices with the same ConfigurationID.
@@ -22,6 +23,9 @@
 
     .PARAMETER ESEFilePath
     Define the EDB file path to use an ad-hoc ESE connection.
+
+    .PARAMETER MDBFilePath
+    Define the MDB file path to use an ad-hoc MDB connection.
 
     .PARAMETER SQLServer
     Define the SQL Instance to use in an ad-hoc SQL connection.
@@ -54,8 +58,12 @@ function Get-DSCPullServerAdminDevice {
         [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
 
         [Parameter(Mandatory, ParameterSetName = 'ESE')]
-        [ValidateNotNullOrEmpty()]
-        [string] $ESEFilePath,
+        [ValidateScript({$_ | Assert-DSCPullServerDatabaseFilePath -Type 'ESE'})]
+        [System.IO.FileInfo] $ESEFilePath,
+
+        [Parameter(Mandatory, ParameterSetName = 'MDB')]
+        [ValidateScript({$_ | Assert-DSCPullServerDatabaseFilePath -Type 'MDB'})]
+        [System.IO.FileInfo] $MDBFilePath,
 
         [Parameter(Mandatory, ParameterSetName = 'SQL')]
         [ValidateNotNullOrEmpty()]
@@ -112,6 +120,32 @@ function Get-DSCPullServerAdminDevice {
                 }
 
                 Invoke-DSCPullServerSQLCommand -Connection $Connection -Script $tsqlScript | ForEach-Object {
+                    try {
+                        [DSCDevice]::New($_)
+                    } catch {
+                        Write-Error -ErrorRecord $_ -ErrorAction Continue
+                    }
+                }
+            }
+            MDB {
+                $tsqlScript = 'SELECT * FROM Devices'
+                $filters = [System.Collections.ArrayList]::new()
+                if ($PSBoundParameters.ContainsKey("TargetName")) {
+                    if ([System.Management.Automation.WildcardPattern]::ContainsWildcardCharacters($TargetName)) {
+                        Write-Error -Message "MDB connection does not support wildcards for TargetName" -ErrorAction Stop
+                    } else {
+                        [void] $filters.Add(("TargetName = '{0}'" -f $TargetName))
+                    }
+                }
+                if ($PSBoundParameters.ContainsKey("ConfigurationID")) {
+                    [void] $filters.Add(("ConfigurationID = '{0}'" -f $ConfigurationID))
+                }
+
+                if ($filters.Count -ge 1) {
+                    $tsqlScript += " WHERE {0}" -f ($filters -join ' AND ')
+                }
+
+                Invoke-DSCPullServerMDBCommand -Connection $Connection -Script $tsqlScript | ForEach-Object {
                     try {
                         [DSCDevice]::New($_)
                     } catch {

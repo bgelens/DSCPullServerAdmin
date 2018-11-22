@@ -14,6 +14,8 @@ InModuleScope $moduleName {
     $device = [DSCDevice]::new()
     $device.TargetName = 'bogusDevice'
     $device.ConfigurationID = ([guid]::Empty)
+    $device.ServerCheckSum = 'serverCheckSum'
+    $device.TargetCheckSum = 'targetCheckSum'
 
     $registration = [DSCNodeRegistration]::new()
     $registration.AgentId = [guid]::Empty

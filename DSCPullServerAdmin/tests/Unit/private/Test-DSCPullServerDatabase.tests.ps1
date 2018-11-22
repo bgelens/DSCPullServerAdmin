@@ -4,7 +4,7 @@ $modulePath = "$here\..\..\.."
 $moduleName = Split-Path -Path $modulePath -Leaf
 
 InModuleScope $moduleName {
-    Describe PreProc {
+    Describe Test-DSCPullServerDatabase {
         $eseConnection = [DSCPullServerESEConnection]::new()
         $eseConnection.Index = 0
 
@@ -17,7 +17,7 @@ InModuleScope $moduleName {
                 )
             }
 
-            Test-DSCPullServerESEDatabase -Connection $eseConnection |
+            Test-DSCPullServerDatabase -Connection $eseConnection |
                 Should -BeTrue
         }
 
@@ -28,7 +28,7 @@ InModuleScope $moduleName {
                 )
             }
 
-            Test-DSCPullServerESEDatabase -Connection $eseConnection |
+            Test-DSCPullServerDatabase -Connection $eseConnection |
                 Should -BeFalse
         }
     }

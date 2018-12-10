@@ -131,7 +131,7 @@ function Remove-DSCPullServerAdminDevice {
                 MDB {
                     $tsqlScript = $existingDevice.GetSQLDelete()
 
-                    if ($PSCmdlet.ShouldProcess($Connection.MDBFilePath)) {
+                    if ($PSCmdlet.ShouldProcess($Connection.MDBFilePath, $tsqlScript)) {
                         Invoke-DSCPullServerMDBCommand -Connection $Connection -CommandType Set -Script $tsqlScript
                     }
                 }

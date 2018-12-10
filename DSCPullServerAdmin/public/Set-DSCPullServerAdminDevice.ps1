@@ -191,7 +191,7 @@ function Set-DSCPullServerAdminDevice {
             MDB {
                 $tsqlScript = $existingDevice.GetMDBUpdate()
 
-                if ($PSCmdlet.ShouldProcess($Connection.MDBFilePath)) {
+                if ($PSCmdlet.ShouldProcess($Connection.MDBFilePath, $tsqlScript)) {
                     Invoke-DSCPullServerMDBCommand -Connection $Connection -CommandType Set -Script $tsqlScript
                 }
             }

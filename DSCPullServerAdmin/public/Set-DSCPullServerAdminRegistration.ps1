@@ -167,7 +167,7 @@ function Set-DSCPullServerAdminRegistration {
             MDB {
                 $tsqlScript = $existingRegistration.GetMDBUpdate()
 
-                if ($PSCmdlet.ShouldProcess($Connection.MDBFilePath)) {
+                if ($PSCmdlet.ShouldProcess($Connection.MDBFilePath, $tsqlScript)) {
                     Invoke-DSCPullServerMDBCommand -Connection $Connection -CommandType Set -Script $tsqlScript
                 }
             }

@@ -209,7 +209,7 @@ function New-DSCPullServerAdminStatusReport {
             MDB {
                 $tsqlScript = $report.GetMDBInsert()
 
-                if ($PSCmdlet.ShouldProcess($Connection.MDBFilePath)) {
+                if ($PSCmdlet.ShouldProcess($Connection.MDBFilePath, $tsqlScript)) {
                     Invoke-DSCPullServerMDBCommand -Connection $Connection -CommandType Set -Script $tsqlScript
                 }
             }

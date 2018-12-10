@@ -131,8 +131,8 @@ function Remove-DSCPullServerAdminStatusReport {
                 MDB {
                     $tsqlScript = $existingReport.GetMDBDelete()
 
-                    if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
-                        Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                    if ($PSCmdlet.ShouldProcess($Connection.MDBFilePath, $tsqlScript)) {
+                        Invoke-DSCPullServerMDBCommand -Connection $Connection -CommandType Set -Script $tsqlScript
                     }
                 }
             }

@@ -67,7 +67,7 @@ function New-DSCPullServerAdminConnection {
     )
 
     if ($PSCmdlet.ParameterSetName -eq 'MDB') {
-        Assert-DSCPullServerMDBPreReqs
+        Assert-DSCPullServerMDBPreReq
     }
 
     $currentConnections = Get-DSCPullServerAdminConnection

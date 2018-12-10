@@ -5,6 +5,8 @@ $moduleName = Split-Path -Path $modulePath -Leaf
 
 InModuleScope $moduleName {
     Describe New-DSCPullServerAdminConnection {
+        $tempEDBFile = New-Item -Path TestDrive: -Name pull.edb -ItemType File -Force
+
         BeforeEach {
             $script:DSCPullServerConnections = $null
         }
@@ -16,7 +18,7 @@ InModuleScope $moduleName {
             }
 
             $null = New-Item -Path TestDrive: -Name pull.edb -ItemType File -Force
-            $result = New-DSCPullServerAdminConnection -ESEFilePath TestDrive:pull.edb
+            $result = New-DSCPullServerAdminConnection -ESEFilePath $tempEDBFile.FullName
             $result.Index | Should -Be 0
             $result.Type | SHould -Be 'ESE'
             $script:DSCPullServerConnections | Should -Not -BeNullOrEmpty
@@ -34,8 +36,7 @@ InModuleScope $moduleName {
                 $true
             }
 
-            $null = New-Item -Path TestDrive: -Name pull.edb -ItemType File -Force
-            $result = New-DSCPullServerAdminConnection -ESEFilePath TestDrive:pull.edb
+            $result = New-DSCPullServerAdminConnection -ESEFilePath $tempEDBFile.FullName
             $result.Index | Should -Be 1
             $result.Type | SHould -Be 'ESE'
             $script:DSCPullServerConnections | Should -Not -BeNullOrEmpty
@@ -47,8 +48,7 @@ InModuleScope $moduleName {
                 $true
             }
 
-            $null = New-Item -Path TestDrive: -Name pull.edb -ItemType File -Force
-            $null = New-DSCPullServerAdminConnection -ESEFilePath TestDrive:pull.edb -DontStore
+            $null = New-DSCPullServerAdminConnection -ESEFilePath $tempEDBFile.FullName -DontStore
             $script:DSCPullServerConnections | Should -BeNullOrEmpty
         }
 

@@ -47,6 +47,7 @@ function Get-DSCPullServerAdminDevice {
     [CmdletBinding(DefaultParameterSetName = 'Connection')]
     param (
         [Parameter()]
+        [SupportsWildcards()]
         [ValidateNotNullOrEmpty()]
         [String] $TargetName,
 
@@ -109,7 +110,7 @@ function Get-DSCPullServerAdminDevice {
                 $tsqlScript = 'SELECT * FROM Devices'
                 $filters = [System.Collections.ArrayList]::new()
                 if ($PSBoundParameters.ContainsKey("TargetName")) {
-                    [void] $filters.Add(("TargetName like '{0}'" -f $TargetName.Replace('*', '%')))
+                    [void] $filters.Add(("TargetName like '{0}'" -f $TargetName.Replace('*', '%').Replace('?', '_')))
                 }
                 if ($PSBoundParameters.ContainsKey("ConfigurationID")) {
                     [void] $filters.Add(("ConfigurationID = '{0}'" -f $ConfigurationID))

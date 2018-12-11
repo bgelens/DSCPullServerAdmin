@@ -68,6 +68,7 @@ function Get-DSCPullServerAdminStatusReport {
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
+        [SupportsWildcards()]
         [Alias('Name')]
         [string] $NodeName,
 
@@ -165,7 +166,7 @@ function Get-DSCPullServerAdminStatusReport {
                     [void] $filters.Add(("Id = '{0}'" -f $AgentId))
                 }
                 if ($PSBoundParameters.ContainsKey("NodeName")) {
-                    [void] $filters.Add(("NodeName like '{0}'" -f $NodeName.Replace('*', '%')))
+                    [void] $filters.Add(("NodeName like '{0}'" -f $NodeName.Replace('*', '%').Replace('?', '_')))
                 }
                 if ($PSBoundParameters.ContainsKey("FromStartTime")) {
                     [void] $filters.Add(("StartTime >= '{0}'" -f (Get-Date $FromStartTime -f s)))

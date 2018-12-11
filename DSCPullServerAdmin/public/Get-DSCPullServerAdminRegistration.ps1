@@ -48,6 +48,7 @@ function Get-DSCPullServerAdminRegistration {
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
+        [SupportsWildcards()]
         [Alias('Name')]
         [string] $NodeName,
 
@@ -109,7 +110,7 @@ function Get-DSCPullServerAdminRegistration {
                     [void] $filters.Add(("AgentId = '{0}'" -f $AgentId))
                 }
                 if ($PSBoundParameters.ContainsKey("NodeName")) {
-                    [void] $filters.Add(("NodeName like '{0}'" -f $NodeName.Replace('*', '%')))
+                    [void] $filters.Add(("NodeName like '{0}'" -f $NodeName.Replace('*', '%').Replace('?', '_')))
                 }
 
                 if ($filters.Count -ge 1) {

@@ -126,7 +126,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = 'Fix where Copy-DSCPullServerAdmin would only copy 5 StatusReports. Now copies all'
+        ReleaseNotes = 'MDB Support'
 
     } # End of PSData hashtable
 

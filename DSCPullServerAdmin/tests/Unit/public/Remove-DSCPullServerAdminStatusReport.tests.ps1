@@ -157,6 +157,61 @@ InModuleScope $moduleName {
             Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 1 -Scope it
         }
 
+        It 'Should remove a statusreport when JobId was specified and statusreport was found and MDBFilePath is used (MDB)' {
+            Mock -CommandName Get-DSCPullServerAdminStatusReport -MockWith {
+                $report
+            }
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            Mock -CommandName Remove-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $mdbConnection
+            }
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                $true
+            }
+
+            { Remove-DSCPullServerAdminStatusReport -JobId ([guid]::Empty) -MDBFilePath 'c:\bogus.mdb' -Confirm:$false 4>&1 } |
+                Should -Not -Throw
+
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminStatusReport -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Remove-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should throw and not remove a statusreport when MDBFilePath is invalid (MDB)' {
+            Mock -CommandName Get-DSCPullServerAdminStatusReport -MockWith {
+                $report
+            }
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            Mock -CommandName Remove-DSCPullServerESERecord
+
+            Mock -CommandName PreProc
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                throw 'invalid mdb'
+            }
+
+            { Remove-DSCPullServerAdminStatusReport -JobId ([guid]::Empty) -MDBFilePath 'c:\bogus.mdb' -Confirm:$false 4>&1 } |
+                Should -Throw
+
+            Assert-MockCalled -CommandName PreProc -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminStatusReport -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Remove-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
+        }
+
         It 'Should remove a statusreport when JobId was specified and statusreport was found (ESE)' {
             Mock -CommandName Get-DSCPullServerAdminStatusReport -MockWith {
                 $report
@@ -177,6 +232,61 @@ InModuleScope $moduleName {
             Assert-MockCalled -CommandName Get-DSCPullServerAdminStatusReport -Exactly -Times 2 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Remove-DSCPullServerESERecord -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
+        }
+
+        It 'Should remove a statusreport when JobId was specified and statusreport was found and ESEFilePath is used (ESE)' {
+            Mock -CommandName Get-DSCPullServerAdminStatusReport -MockWith {
+                $report
+            }
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            Mock -CommandName Remove-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                $true
+            }
+
+            { Remove-DSCPullServerAdminStatusReport -JobId ([guid]::Empty) -ESEFilePath 'c:\bogus.edb' -Confirm:$false 4>&1 } |
+                Should -Not -Throw
+
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminStatusReport -Exactly -Times 2 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Remove-DSCPullServerESERecord -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
+        }
+
+        It 'Should throw and not remove a statusreport when ESEFilePath is invalid (ESE)' {
+            Mock -CommandName Get-DSCPullServerAdminStatusReport -MockWith {
+                $report
+            }
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            Mock -CommandName Remove-DSCPullServerESERecord
+
+            Mock -CommandName PreProc
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                throw 'invalid edb'
+            }
+
+            { Remove-DSCPullServerAdminStatusReport -JobId ([guid]::Empty) -ESEFilePath 'c:\bogus.edb' -Confirm:$false 4>&1 } |
+                Should -Throw
+
+            Assert-MockCalled -CommandName PreProc -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminStatusReport -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Remove-DSCPullServerESERecord -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
         }
 

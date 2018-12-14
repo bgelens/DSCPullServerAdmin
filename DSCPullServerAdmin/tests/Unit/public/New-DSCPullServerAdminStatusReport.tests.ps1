@@ -83,6 +83,74 @@ InModuleScope $moduleName {
             Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 1 -Scope it
         }
 
+        It 'Should create a statusreport when JobId specified did not result in statusreport already found and MDBFilePath is used (MDB)' {
+            Mock -CommandName Get-DSCPullServerAdminStatusReport
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand -MockWith {
+                param (
+                    $script
+                )
+                Write-Verbose -Message $Script -Verbose
+            }
+
+            Mock -CommandName PreProc -MockWith {
+                $mdbConnection
+            }
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                $true
+            }
+
+            Mock -CommandName Mount-DSCPullServerESEDatabase
+            Mock -CommandName Open-DSCPullServerTable
+            Mock -CommandName Set-DSCPullServerESERecord
+            Mock -CommandName Dismount-DSCPullServerESEDatabase
+
+            { New-DSCPullServerAdminStatusReport -JobId ([guid]::Empty) -MDBFilePath 'c:\bogus.mdb' 4>&1 } |
+                Should -Not -Throw
+
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminStatusReport -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Mount-DSCPullServerESEDatabase -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Open-DSCPullServerTable -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Dismount-DSCPullServerESEDatabase -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should throw and not create a statusreport when MDBFilePath is invalid (MDB)' {
+            Mock -CommandName Get-DSCPullServerAdminStatusReport
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            Mock -CommandName PreProc
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                throw 'invalid mdb'
+            }
+
+            Mock -CommandName Mount-DSCPullServerESEDatabase
+            Mock -CommandName Open-DSCPullServerTable
+            Mock -CommandName Set-DSCPullServerESERecord
+            Mock -CommandName Dismount-DSCPullServerESEDatabase
+
+            { New-DSCPullServerAdminStatusReport -JobId ([guid]::Empty) -MDBFilePath 'c:\bogus.mdb' 4>&1 } |
+                Should -Throw
+
+            Assert-MockCalled -CommandName PreProc -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminStatusReport -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Mount-DSCPullServerESEDatabase -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Open-DSCPullServerTable -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Dismount-DSCPullServerESEDatabase -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
+        }
+
         It 'Should create a statusreport when JobId specified did not result in statusreport already found (ESE)' {
             Mock -CommandName Get-DSCPullServerAdminStatusReport
 
@@ -107,6 +175,69 @@ InModuleScope $moduleName {
             Assert-MockCalled -CommandName Open-DSCPullServerTable -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Dismount-DSCPullServerESEDatabase -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
+        }
+
+        It 'Should create a statusreport when JobId specified did not result in statusreport already found and ESEFilePath is used (ESE)' {
+            Mock -CommandName Get-DSCPullServerAdminStatusReport
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                $true
+            }
+
+            Mock -CommandName Mount-DSCPullServerESEDatabase
+            Mock -CommandName Open-DSCPullServerTable
+            Mock -CommandName Set-DSCPullServerESERecord
+            Mock -CommandName Dismount-DSCPullServerESEDatabase
+
+            { New-DSCPullServerAdminStatusReport -JobId ([guid]::Empty) -ESEFilePath 'c:\bogus.edb' 4>&1 } |
+                Should -Not -Throw
+
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminStatusReport -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Mount-DSCPullServerESEDatabase -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Open-DSCPullServerTable -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Dismount-DSCPullServerESEDatabase -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
+        }
+
+        It 'Should throw and not create a statusreport when ESEFilePath is invalid (ESE)' {
+            Mock -CommandName Get-DSCPullServerAdminStatusReport
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            Mock -CommandName PreProc
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                throw 'invalid edb'
+            }
+
+            Mock -CommandName Mount-DSCPullServerESEDatabase
+            Mock -CommandName Open-DSCPullServerTable
+            Mock -CommandName Set-DSCPullServerESERecord
+            Mock -CommandName Dismount-DSCPullServerESEDatabase
+
+            { New-DSCPullServerAdminStatusReport -JobId ([guid]::Empty) -ESEFilePath 'c:\bogus.edb' 4>&1 } |
+                Should -Throw
+
+            Assert-MockCalled -CommandName PreProc -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminStatusReport -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Mount-DSCPullServerESEDatabase -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Open-DSCPullServerTable -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Dismount-DSCPullServerESEDatabase -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
         }
 

@@ -147,13 +147,66 @@ InModuleScope $moduleName {
                 $mdbConnection
             }
 
-            $result = Set-DSCPullServerAdminRegistration -AgentId ([guid]::Empty) -ConfigurationNames 'bogusConfig' -Connection $sqlConnection -Confirm:$false 4>&1
+            $result = Set-DSCPullServerAdminRegistration -AgentId ([guid]::Empty) -ConfigurationNames 'bogusConfig' -Connection $mdbConnection -Confirm:$false 4>&1
             $result | Should -Not -BeNullOrEmpty
 
             Assert-MockCalled -CommandName Get-DSCPullServerAdminRegistration -Exactly -Times 1 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should update a registration when AgentId was specified and registration was found and MDBFilePath was used (MDB)' {
+            Mock -CommandName Get-DSCPullServerAdminRegistration -MockWith {
+                $registration
+            }
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            Mock -CommandName Set-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $mdbConnection
+            }
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                $true
+            }
+
+            { Set-DSCPullServerAdminRegistration -AgentId ([guid]::Empty) -ConfigurationNames 'bogusConfig' -MDBFilePath 'c:\bogus.mdb' -Confirm:$false 4>&1 } |
+                Should -Not -Throw
+
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminRegistration -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should not update a registration when MDBFilePath is invalid (MDB)' {
+            Mock -CommandName Get-DSCPullServerAdminRegistration
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            Mock -CommandName Set-DSCPullServerESERecord
+
+            Mock -CommandName PreProc
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                throw 'invalid mdb'
+            }
+
+            { Set-DSCPullServerAdminRegistration -AgentId ([guid]::Empty) -ConfigurationNames 'bogusConfig' -MDBFilePath 'c:\bogus.mdb' -Confirm:$false 4>&1 } |
+                Should -Throw
+
+            Assert-MockCalled -CommandName PreProc -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminRegistration -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
         }
 
         It 'Should update a registration when AgentId was specified and registration was found (ESE)' {
@@ -176,6 +229,59 @@ InModuleScope $moduleName {
             Assert-MockCalled -CommandName Get-DSCPullServerAdminRegistration -Exactly -Times 2 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
+        }
+
+        It 'Should update a registration when AgentId was specified and registration was found and ESEFilePath is used (ESE)' {
+            Mock -CommandName Get-DSCPullServerAdminRegistration -MockWith {
+                $registration
+            }
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            Mock -CommandName Set-DSCPullServerESERecord
+
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                $true
+            }
+
+            { Set-DSCPullServerAdminRegistration -AgentId ([guid]::Empty) -ConfigurationNames 'bogusConfig' -ESEFilePath 'c:\bogus.edb' -Confirm:$false 4>&1 } |
+                Should -Not -Throw
+
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminRegistration -Exactly -Times 2 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
+        }
+
+        It 'Should not update a registration when ESEFilePath is invalid (ESE)' {
+            Mock -CommandName Get-DSCPullServerAdminRegistration
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            Mock -CommandName Set-DSCPullServerESERecord
+
+            Mock -CommandName PreProc
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                throw 'invalid edb'
+            }
+
+            { Set-DSCPullServerAdminRegistration -AgentId ([guid]::Empty) -ConfigurationNames 'bogusConfig' -ESEFilePath 'c:\bogus.edb' -Confirm:$false 4>&1 } |
+                Should -Throw
+
+            Assert-MockCalled -CommandName PreProc -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerAdminRegistration -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Set-DSCPullServerESERecord -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
         }
 

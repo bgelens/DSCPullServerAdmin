@@ -6,6 +6,7 @@ $moduleName = Split-Path -Path $modulePath -Leaf
 InModuleScope $moduleName {
     Describe New-DSCPullServerAdminConnection {
         $tempEDBFile = New-Item -Path TestDrive: -Name pull.edb -ItemType File -Force
+        $tempMDBFile = New-Item -Path TestDrive: -Name pull.mdb -ItemType File -Force
 
         BeforeEach {
             $script:DSCPullServerConnections = $null
@@ -132,7 +133,7 @@ InModuleScope $moduleName {
             $script:DSCPullServerConnections | Should -Not -BeNullOrEmpty
         }
 
-        It 'Should throw when connection validated false' {
+        It 'Should throw when connection validated false (SQL)' {
             Mock -CommandName Get-DSCPullServerAdminConnection
 
             Mock -CommandName Test-DSCPullServerDatabaseExist -MockWith {
@@ -145,7 +146,7 @@ InModuleScope $moduleName {
             $script:DSCPullServerConnections | Should -BeNullOrEmpty
         }
 
-        It 'Should throw when expected tables are not found' {
+        It 'Should throw when expected tables are not found (SQL)' {
             Mock -CommandName Get-DSCPullServerAdminConnection
 
             Mock -CommandName Test-DSCPullServerDatabaseExist -MockWith {

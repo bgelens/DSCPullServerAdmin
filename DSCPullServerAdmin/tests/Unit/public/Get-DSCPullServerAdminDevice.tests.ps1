@@ -39,6 +39,51 @@ InModuleScope $moduleName {
             Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
         }
 
+        It 'Should Call Get-DSCPullServerESERecord when ESEFilePath is used and is valid (ESE)' {
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            Mock -CommandName Get-DSCPullServerESERecord
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                $true
+            }
+
+            Get-DSCPullServerAdminDevice -ESEFilePath 'c:\bogus.edb'
+
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Assert-DSCPullServerDatabaseFilePath -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should throw and not Call Get-DSCPullServerESERecord when ESEFilePath is used and is not valid (ESE)' {
+            Mock -CommandName PreProc
+
+            Mock -CommandName Get-DSCPullServerESERecord
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                throw 'invalid edb'
+            }
+
+            { Get-DSCPullServerAdminDevice -ESEFilePath 'c:\bogus.edb' } | Should -Throw
+
+            Assert-MockCalled -CommandName PreProc -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Assert-DSCPullServerDatabaseFilePath -Exactly -Times 1 -Scope it
+        }
+
         It 'Should Call Get-DSCPullServerESERecord when active Connection is ESE' {
             $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
             [void] $script:DSCPullServerConnections.Add($eseConnection)
@@ -127,6 +172,49 @@ InModuleScope $moduleName {
             Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should Call Invoke-DSCPullServerMDBCommand when MDBFilePath is used and is valid (MDB)' {
+            Mock -CommandName PreProc -MockWith {
+                $mdbConnection
+            }
+
+            Mock -CommandName Get-DSCPullServerESERecord
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                $true
+            }
+
+            Get-DSCPullServerAdminDevice -MDBFilePath 'c:\bogus.mdb'
+
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should throw and not Call Invoke-DSCPullServerMDBCommand when MDBFilePath is used and is not valid (MDB)' {
+            Mock -CommandName PreProc
+
+            Mock -CommandName Get-DSCPullServerESERecord
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            Mock -CommandName Assert-DSCPullServerDatabaseFilePath -MockWith {
+                throw 'invalid mdb'
+            }
+
+            { Get-DSCPullServerAdminDevice -MDBFilePath 'c:\bogus.mdb' } | Should -Throw
+
+            Assert-MockCalled -CommandName PreProc -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
         }
 
         It 'Should Call Invoke-DSCPullServerSQLCommand when active Connection is SQL' {
@@ -223,6 +311,69 @@ InModuleScope $moduleName {
             Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
             Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 1 -Scope it
+        }
+
+        It 'Should throw when active Connection is MDB and wildcards are used' {
+            $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
+            [void] $script:DSCPullServerConnections.Add($mdbConnection)
+
+            Mock -CommandName PreProc -MockWith {
+                $mdbConnection
+            }
+
+            Mock -CommandName Get-DSCPullServerESERecord
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            { Get-DSCPullServerAdminDevice -TargetName 'bogusTargetName*' } | Should -Throw
+
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
+        }
+
+        It 'Should not throw when active Connection is SQL and wildcards are used' {
+            $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
+            [void] $script:DSCPullServerConnections.Add($sqlConnection)
+
+            Mock -CommandName PreProc -MockWith {
+                $sqlConnection
+            }
+
+            Mock -CommandName Get-DSCPullServerESERecord
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            { Get-DSCPullServerAdminDevice -TargetName 'bogusTargetName*' } | Should -Not -Throw
+
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
+        }
+
+        It 'Should not throw when active Connection is ESE and wildcards are used' {
+            $script:DSCPullServerConnections = [System.Collections.ArrayList]::new()
+            [void] $script:DSCPullServerConnections.Add($eseConnection)
+
+            Mock -CommandName PreProc -MockWith {
+                $eseConnection
+            }
+
+            Mock -CommandName Get-DSCPullServerESERecord
+
+            Mock -CommandName Invoke-DSCPullServerSQLCommand
+
+            Mock -CommandName Invoke-DSCPullServerMDBCommand
+
+            { Get-DSCPullServerAdminDevice -TargetName 'bogusTargetName*' } | Should -Not -Throw
+
+            Assert-MockCalled -CommandName Get-DSCPullServerESERecord -Exactly -Times 1 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerSQLCommand -Exactly -Times 0 -Scope it
+            Assert-MockCalled -CommandName Invoke-DSCPullServerMDBCommand -Exactly -Times 0 -Scope it
         }
 
         It 'Should throw when Invoke-DSCPullServerSQLCommand result cannot be used to instantiate DSCDevice object' {

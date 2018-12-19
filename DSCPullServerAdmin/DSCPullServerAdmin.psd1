@@ -54,7 +54,7 @@ PowerShellVersion = '5.1'
 # RequiredModules = @()
 
 # Assemblies that must be loaded prior to importing this module
-RequiredAssemblies = @('Microsoft.Isam.Esent.Interop')
+# RequiredAssemblies = @()
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
 # ScriptsToProcess = @()
@@ -126,11 +126,12 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = '* MDB Support
-* Bug fixes
-* Added wildcard attribute to parameters that support it (MDB does not support wildcards)
-* Added single char ? wildcard support besides *
-* Locked to PSv5.1+'
+        ReleaseNotes = 'Cross Platform support (Only SQL is supported xPlat. MDB and ESE are not)
+* Removed Microsoft.Isam.Esent.Interop from RequiredAssemblies
+* Load Microsoft.Isam.Esent.Interop when available
+* removed RetrieveColumnAsGuid and moved properties to RetrieveColumnAsString as something broke on latest w10 insiders
+
+* Fix ad-hoc mdb database access did not process as PreProc was missing MDB logic'
 
     } # End of PSData hashtable
 

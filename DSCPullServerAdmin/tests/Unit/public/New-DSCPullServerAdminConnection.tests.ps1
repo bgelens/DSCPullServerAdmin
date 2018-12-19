@@ -17,15 +17,18 @@ InModuleScope $moduleName {
             Mock -CommandName Test-DSCPullServerDatabase -MockWith {
                 $true
             }
+            Mock -CommandName Assert-DSCPullServerESEPreReq
 
             $null = New-Item -Path TestDrive: -Name pull.edb -ItemType File -Force
             $result = New-DSCPullServerAdminConnection -ESEFilePath $tempEDBFile.FullName
             $result.Index | Should -Be 0
             $result.Type | SHould -Be 'ESE'
             $script:DSCPullServerConnections | Should -Not -BeNullOrEmpty
+
+            Assert-MockCalled -CommandName Assert-DSCPullServerESEPreReq -Times 1 -Exactly -Scope it
         }
 
-        It 'Should assign index 1 when previous connecions are in module var DSCPullServerConnections' {
+        It 'Should assign index 1 when previous connections are in module var DSCPullServerConnections' {
             Mock -CommandName Get-DSCPullServerAdminConnection -MockWith {
                 $sqlConnection = [DSCPullServerSQLConnection]::new()
                 $sqlConnection.Active = $true
@@ -36,6 +39,8 @@ InModuleScope $moduleName {
             Mock -CommandName Test-DSCPullServerDatabase -MockWith {
                 $true
             }
+
+            Mock -CommandName Assert-DSCPullServerESEPreReq
 
             $result = New-DSCPullServerAdminConnection -ESEFilePath $tempEDBFile.FullName
             $result.Index | Should -Be 1
@@ -48,9 +53,12 @@ InModuleScope $moduleName {
             Mock -CommandName Test-DSCPullServerDatabase -MockWith {
                 $true
             }
+            Mock -CommandName Assert-DSCPullServerMDBPreReq
 
-            $null = New-DSCPullServerAdminConnection -ESEFilePath $tempEDBFile.FullName -DontStore
+            $null = New-DSCPullServerAdminConnection -MDBFilePath $tempMDBFile.FullName -DontStore
             $script:DSCPullServerConnections | Should -BeNullOrEmpty
+
+            Assert-MockCalled -CommandName Assert-DSCPullServerMDBPreReq -Times 1 -Exactly -Scope it
         }
 
         It 'Should create a SQL Connection when no Credentials are specified and database is specified and connection is validated true' {
@@ -64,6 +72,9 @@ InModuleScope $moduleName {
                 $true
             }
 
+            Mock -CommandName Assert-DSCPullServerESEPreReq
+            Mock -CommandName Assert-DSCPullServerMDBPreReq
+
             $result = New-DSCPullServerAdminConnection -SQLServer 'Server\Instance' -Database 'DSCDB'
             $result.Index | Should -Be 0
             $result.Type | Should -Be 'SQL'
@@ -71,6 +82,9 @@ InModuleScope $moduleName {
             $result.Credential | Should -BeNullOrEmpty
             $result.Database | Should -Be 'DSCDB'
             $script:DSCPullServerConnections | Should -Not -BeNullOrEmpty
+
+            Assert-MockCalled -CommandName Assert-DSCPullServerESEPreReq -Times 0 -Exactly -Scope it
+            Assert-MockCalled -CommandName Assert-DSCPullServerMDBPreReq -Times 0 -Exactly -Scope it
         }
 
         It 'Should create a SQL Connection when Credential is specified and database is specified and connection is validated true' {

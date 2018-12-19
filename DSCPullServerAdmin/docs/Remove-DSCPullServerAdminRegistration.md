@@ -18,9 +18,15 @@ Remove-DSCPullServerAdminRegistration -InputObject <DSCNodeRegistration>
  [-Connection <DSCPullServerConnection>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
+### InputObject_MDB
+```
+Remove-DSCPullServerAdminRegistration -InputObject <DSCNodeRegistration> -MDBFilePath <FileInfo> [-WhatIf]
+ [-Confirm] [<CommonParameters>]
+```
+
 ### InputObject_ESE
 ```
-Remove-DSCPullServerAdminRegistration -InputObject <DSCNodeRegistration> -ESEFilePath <String> [-WhatIf]
+Remove-DSCPullServerAdminRegistration -InputObject <DSCNodeRegistration> -ESEFilePath <FileInfo> [-WhatIf]
  [-Confirm] [<CommonParameters>]
 ```
 
@@ -30,9 +36,15 @@ Remove-DSCPullServerAdminRegistration -InputObject <DSCNodeRegistration> -SQLSer
  [-Credential <PSCredential>] [-Database <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
+### Manual_MDB
+```
+Remove-DSCPullServerAdminRegistration -AgentId <Guid> -MDBFilePath <FileInfo> [-WhatIf] [-Confirm]
+ [<CommonParameters>]
+```
+
 ### Manual_ESE
 ```
-Remove-DSCPullServerAdminRegistration -AgentId <Guid> -ESEFilePath <String> [-WhatIf] [-Confirm]
+Remove-DSCPullServerAdminRegistration -AgentId <Guid> -ESEFilePath <FileInfo> [-WhatIf] [-Confirm]
  [<CommonParameters>]
 ```
 
@@ -72,7 +84,7 @@ Pass in the registration object to be removed from the database.
 
 ```yaml
 Type: DSCNodeRegistration
-Parameter Sets: InputObject_Connection, InputObject_ESE, InputObject_SQL
+Parameter Sets: InputObject_Connection, InputObject_MDB, InputObject_ESE, InputObject_SQL
 Aliases:
 
 Required: True
@@ -87,7 +99,7 @@ Define the AgentId of the registration to be removed from the database.
 
 ```yaml
 Type: Guid
-Parameter Sets: Manual_ESE, Manual_SQL, Manual_Connection
+Parameter Sets: Manual_MDB, Manual_ESE, Manual_SQL, Manual_Connection
 Aliases:
 
 Required: True
@@ -119,8 +131,23 @@ Accept wildcard characters: False
 Define the EDB file path to use an ad-hoc ESE connection.
 
 ```yaml
-Type: String
+Type: FileInfo
 Parameter Sets: InputObject_ESE, Manual_ESE
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MDBFilePath
+Define the MDB file path to use an ad-hoc MDB connection.
+
+```yaml
+Type: FileInfo
+Parameter Sets: InputObject_MDB, Manual_MDB
 Aliases:
 
 Required: True

@@ -47,7 +47,7 @@ Filter output on Connection type.
 Type: DSCPullServerConnectionType
 Parameter Sets: (All)
 Aliases:
-Accepted values: SQL, ESE
+Accepted values: SQL, ESE, MDB
 
 Required: False
 Position: 1
@@ -95,9 +95,8 @@ For more information, see about_CommonParameters (http://go.microsoft.com/fwlink
 ## OUTPUTS
 
 ### DSCPullServerSQLConnection
-
 ### DSCPullServerESEConnection
-
+### DSCPullServerMDBConnection
 ## NOTES
 
 ## RELATED LINKS

@@ -19,14 +19,14 @@ InModuleScope $moduleName {
             }
         }
 
+        $instance = [DSCNodeRegistration]::new()
+        $instance.AgentId = [guid]::Empty
+
+        $instance2 = [DSCNodeRegistration]::new()
+        $instance2.AgentId = [guid]::Empty
+        $instance2.ConfigurationNames = 'bla'
+
         Context 'SQL Methods' {
-            $instance = [DSCNodeRegistration]::new()
-            $instance.AgentId = [guid]::Empty
-
-            $instance2 = [DSCNodeRegistration]::new()
-            $instance2.AgentId = [guid]::Empty
-            $instance2.ConfigurationNames = 'bla'
-
             It 'Should create a SQLUpdateQuery with empty ConfigurationName' {
                 $instance.GetSQLUpdate() |
                     Should -Be "UPDATE RegistrationData Set ConfigurationNames = '[]',IPAddress = '',LCMVersion = '',NodeName = '' WHERE AgentId = '00000000-0000-0000-0000-000000000000'"
@@ -49,6 +49,33 @@ InModuleScope $moduleName {
 
             It 'Should create a SQLDeleteQuery' {
                 $instance.GetSQLDelete() |
+                    Should -Be "DELETE FROM RegistrationData WHERE AgentId = '00000000-0000-0000-0000-000000000000'"
+            }
+        }
+
+        Context 'MDB Methods' {
+            It 'Should create a MDBUpdateQuery with empty ConfigurationName' {
+                $instance.GetMDBUpdate() |
+                    Should -Be "UPDATE RegistrationData Set ConfigurationNames = '[]',IPAddress = '',LCMVersion = '',NodeName = '' WHERE AgentId = '00000000-0000-0000-0000-000000000000'"
+            }
+
+            It 'Should create a MDBUpdateQuery with specified ConfigurationName' {
+                $instance2.GetMDBUpdate() |
+                    Should -Be "UPDATE RegistrationData Set ConfigurationNames = '[`"bla`"]',IPAddress = '',LCMVersion = '',NodeName = '' WHERE AgentId = '00000000-0000-0000-0000-000000000000'"
+            }
+
+            It 'Should create a MDBInsertQuery with empty ConfigurationName' {
+                $instance.GetMDBInsert() |
+                    Should -Be "INSERT INTO RegistrationData (AgentId,ConfigurationNames,IPAddress,LCMVersion,NodeName) VALUES ('00000000-0000-0000-0000-000000000000','[]','','','')"
+            }
+
+            It 'Should create a MDBInsertQuery with specified ConfigurationName' {
+                $instance2.GetMDBInsert() |
+                    Should -Be "INSERT INTO RegistrationData (AgentId,ConfigurationNames,IPAddress,LCMVersion,NodeName) VALUES ('00000000-0000-0000-0000-000000000000','[`"bla`"]','','','')"
+            }
+
+            It 'Should create a MDBDeleteQuery' {
+                $instance.GetMDBDelete() |
                     Should -Be "DELETE FROM RegistrationData WHERE AgentId = '00000000-0000-0000-0000-000000000000'"
             }
         }

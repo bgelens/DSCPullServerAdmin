@@ -5,18 +5,21 @@ $moduleName = Split-Path -Path $modulePath -Leaf
 
 InModuleScope $moduleName {
     Describe New-DSCPullServerAdminConnection {
+        $tempEDBFile = New-Item -Path TestDrive: -Name pull.edb -ItemType File -Force
+        $tempMDBFile = New-Item -Path TestDrive: -Name pull.mdb -ItemType File -Force
+
         BeforeEach {
             $script:DSCPullServerConnections = $null
         }
 
         It 'Should assign index 0 when no previous connecions are in module var DSCPullServerConnections' {
             Mock -CommandName Get-DSCPullServerAdminConnection
-            Mock -CommandName Test-DSCPullServerESEDatabase -MockWith {
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
                 $true
             }
 
             $null = New-Item -Path TestDrive: -Name pull.edb -ItemType File -Force
-            $result = New-DSCPullServerAdminConnection -ESEFilePath TestDrive:pull.edb
+            $result = New-DSCPullServerAdminConnection -ESEFilePath $tempEDBFile.FullName
             $result.Index | Should -Be 0
             $result.Type | SHould -Be 'ESE'
             $script:DSCPullServerConnections | Should -Not -BeNullOrEmpty
@@ -30,12 +33,11 @@ InModuleScope $moduleName {
                 $sqlConnection
             }
 
-            Mock -CommandName Test-DSCPullServerESEDatabase -MockWith {
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
                 $true
             }
 
-            $null = New-Item -Path TestDrive: -Name pull.edb -ItemType File -Force
-            $result = New-DSCPullServerAdminConnection -ESEFilePath TestDrive:pull.edb
+            $result = New-DSCPullServerAdminConnection -ESEFilePath $tempEDBFile.FullName
             $result.Index | Should -Be 1
             $result.Type | SHould -Be 'ESE'
             $script:DSCPullServerConnections | Should -Not -BeNullOrEmpty
@@ -43,12 +45,11 @@ InModuleScope $moduleName {
 
         It 'Should not add to module var DSCPullServerConnections when DontStore is specified' {
             Mock -CommandName Get-DSCPullServerAdminConnection
-            Mock -CommandName Test-DSCPullServerESEDatabase -MockWith {
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
                 $true
             }
 
-            $null = New-Item -Path TestDrive: -Name pull.edb -ItemType File -Force
-            $null = New-DSCPullServerAdminConnection -ESEFilePath TestDrive:pull.edb -DontStore
+            $null = New-DSCPullServerAdminConnection -ESEFilePath $tempEDBFile.FullName -DontStore
             $script:DSCPullServerConnections | Should -BeNullOrEmpty
         }
 
@@ -56,6 +57,10 @@ InModuleScope $moduleName {
             Mock -CommandName Get-DSCPullServerAdminConnection
 
             Mock -CommandName Test-DSCPullServerDatabaseExist -MockWith {
+                $true
+            }
+
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
                 $true
             }
 
@@ -75,6 +80,10 @@ InModuleScope $moduleName {
                 $true
             }
 
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
+                $true
+            }
+
             $result = New-DSCPullServerAdminConnection -SQLServer 'Server\Instance' -Database 'DSCDB' -Credential ([pscredential]::new('sa', [securestring]::new()))
             $result.Index | Should -Be 0
             $result.Type | Should -Be 'SQL'
@@ -88,6 +97,10 @@ InModuleScope $moduleName {
             Mock -CommandName Get-DSCPullServerAdminConnection
 
             Mock -CommandName Test-DSCPullServerDatabaseExist -MockWith {
+                $true
+            }
+
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
                 $true
             }
 
@@ -107,6 +120,10 @@ InModuleScope $moduleName {
                 $true
             }
 
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
+                $true
+            }
+
             $result = New-DSCPullServerAdminConnection -SQLServer 'Server\Instance'
             $result.Index | Should -Be 0
             $result.Type | Should -Be 'SQL'
@@ -116,10 +133,27 @@ InModuleScope $moduleName {
             $script:DSCPullServerConnections | Should -Not -BeNullOrEmpty
         }
 
-        It 'Should throw when connection validated false' {
+        It 'Should throw when connection validated false (SQL)' {
             Mock -CommandName Get-DSCPullServerAdminConnection
 
             Mock -CommandName Test-DSCPullServerDatabaseExist -MockWith {
+                $false
+            }
+
+            { New-DSCPullServerAdminConnection -SQLServer 'Server\Instance' } |
+                Should -Throw
+
+            $script:DSCPullServerConnections | Should -BeNullOrEmpty
+        }
+
+        It 'Should throw when expected tables are not found (SQL)' {
+            Mock -CommandName Get-DSCPullServerAdminConnection
+
+            Mock -CommandName Test-DSCPullServerDatabaseExist -MockWith {
+                $true
+            }
+
+            Mock -CommandName Test-DSCPullServerDatabase -MockWith {
                 $false
             }
 

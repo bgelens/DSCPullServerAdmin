@@ -63,6 +63,11 @@ function Copy-DSCPullServerAdminData {
                                 Invoke-DSCPullServerSQLCommand -Connection $Connection2 -CommandType Set -Script ($d.GetSQLInsert())
                             }
                         }
+                        MDB {
+                            if ($PSCmdlet.ShouldProcess($d.TargetName, "Create new device on $($Connection2.MDBFilePath)")) {
+                                Invoke-DSCPullServerMDBCommand -Connection $Connection2 -CommandType Set -Script ($d.GetMDBInsert())
+                            }
+                        }
                     }
                 } else {
                     switch ($Connection2.Type) {
@@ -80,6 +85,16 @@ function Copy-DSCPullServerAdminData {
                                 if ($Force) {
                                     Invoke-DSCPullServerSQLCommand -Connection $Connection2 -CommandType Set -Script ($con2D.GetSQLDelete())
                                     Invoke-DSCPullServerSQLCommand -Connection $Connection2 -CommandType Set -Script ($d.GetSQLInsert())
+                                } else {
+                                    Write-Warning -Message "Unable to replace device $($d.TargetName) as Force switch was not set"
+                                }
+                            }
+                        }
+                        MDB {
+                            if ($PSCmdlet.ShouldProcess($d.TargetName, "Replace existing device on $($Connection2.MDBFilePath)")) {
+                                if ($Force) {
+                                    Invoke-DSCPullServerMDBCommand -Connection $Connection2 -CommandType Set -Script ($con2D.GetMDBDelete())
+                                    Invoke-DSCPullServerMDBCommand -Connection $Connection2 -CommandType Set -Script ($d.GetMDBInsert())
                                 } else {
                                     Write-Warning -Message "Unable to replace device $($d.TargetName) as Force switch was not set"
                                 }
@@ -105,6 +120,11 @@ function Copy-DSCPullServerAdminData {
                                 Invoke-DSCPullServerSQLCommand -Connection $Connection2 -CommandType Set -Script ($r.GetSQLInsert())
                             }
                         }
+                        MDB {
+                            if ($PSCmdlet.ShouldProcess($d.TargetName, "Create new Registration on $($Connection2.MDBFilePath)")) {
+                                Invoke-DSCPullServerMDBCommand -Connection $Connection2 -CommandType Set -Script ($r.GetMDBInsert())
+                            }
+                        }
                     }
                 } else {
                     switch ($Connection2.Type) {
@@ -124,6 +144,16 @@ function Copy-DSCPullServerAdminData {
                                     Invoke-DSCPullServerSQLCommand -Connection $Connection2 -CommandType Set -Script ($r.GetSQLInsert())
                                 } else {
                                     Write-Warning -Message "Unable to replace Registration $($r.AgentId) as Force switch was not set"
+                                }
+                            }
+                        }
+                        MDB {
+                            if ($PSCmdlet.ShouldProcess($d.TargetName, "Replace existing Registration on $($Connection2.MDBFilePath)")) {
+                                if ($Force) {
+                                    Invoke-DSCPullServerMDBCommand -Connection $Connection2 -CommandType Set -Script ($con2Reg.GetMDBDelete())
+                                    Invoke-DSCPullServerMDBCommand -Connection $Connection2 -CommandType Set -Script ($r.GetMDBInsert())
+                                } else {
+                                    Write-Warning -Message "Unable to replace Registration $($d.TargetName) as Force switch was not set"
                                 }
                             }
                         }
@@ -147,6 +177,11 @@ function Copy-DSCPullServerAdminData {
                                 Invoke-DSCPullServerSQLCommand -Connection $Connection2 -CommandType Set -Script ($r.GetSQLInsert())
                             }
                         }
+                        MDB {
+                            if ($PSCmdlet.ShouldProcess($d.TargetName, "Create new StatusReport on $($Connection2.MDBFilePath)")) {
+                                Invoke-DSCPullServerMDBCommand -Connection $Connection2 -CommandType Set -Script ($r.GetMDBInsert())
+                            }
+                        }
                     }
                 } else {
                     switch ($Connection2.Type) {
@@ -166,6 +201,16 @@ function Copy-DSCPullServerAdminData {
                                     Invoke-DSCPullServerSQLCommand -Connection $Connection2 -CommandType Set -Script ($r.GetSQLInsert())
                                 } else {
                                     Write-Warning -Message "Unable to replace StatusReport $($r.JobId) as Force switch was not set"
+                                }
+                            }
+                        }
+                        MDB {
+                            if ($PSCmdlet.ShouldProcess($d.TargetName, "Replace StatusReport Registration on $($Connection2.MDBFilePath)")) {
+                                if ($Force) {
+                                    Invoke-DSCPullServerMDBCommand -Connection $Connection2 -CommandType Set -Script ($con2Rep.GetMDBDelete())
+                                    Invoke-DSCPullServerMDBCommand -Connection $Connection2 -CommandType Set -Script ($r.GetMDBInsert())
+                                } else {
+                                    Write-Warning -Message "Unable to replace StatusReport $($d.TargetName) as Force switch was not set"
                                 }
                             }
                         }

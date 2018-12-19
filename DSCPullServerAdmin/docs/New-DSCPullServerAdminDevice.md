@@ -14,24 +14,32 @@ Create device entries (LCMv1) in a Pull Server Database.
 
 ### Connection (Default)
 ```
-New-DSCPullServerAdminDevice -ConfigurationID <Guid> -TargetName <String> [-ServerCheckSum <String>]
- [-TargetCheckSum <String>] [-NodeCompliant <Boolean>] [-LastComplianceTime <DateTime>]
+New-DSCPullServerAdminDevice -ConfigurationID <Guid> -TargetName <String> -ServerCheckSum <String>
+ -TargetCheckSum <String> [-NodeCompliant <Boolean>] [-LastComplianceTime <DateTime>]
  [-LastHeartbeatTime <DateTime>] [-Dirty <Boolean>] [-StatusCode <UInt32>]
  [-Connection <DSCPullServerConnection>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### ESE
 ```
-New-DSCPullServerAdminDevice -ConfigurationID <Guid> -TargetName <String> [-ServerCheckSum <String>]
- [-TargetCheckSum <String>] [-NodeCompliant <Boolean>] [-LastComplianceTime <DateTime>]
- [-LastHeartbeatTime <DateTime>] [-Dirty <Boolean>] [-StatusCode <UInt32>] -ESEFilePath <String> [-WhatIf]
+New-DSCPullServerAdminDevice -ConfigurationID <Guid> -TargetName <String> -ServerCheckSum <String>
+ -TargetCheckSum <String> [-NodeCompliant <Boolean>] [-LastComplianceTime <DateTime>]
+ [-LastHeartbeatTime <DateTime>] [-Dirty <Boolean>] [-StatusCode <UInt32>] -ESEFilePath <FileInfo> [-WhatIf]
+ [-Confirm] [<CommonParameters>]
+```
+
+### MDB
+```
+New-DSCPullServerAdminDevice -ConfigurationID <Guid> -TargetName <String> -ServerCheckSum <String>
+ -TargetCheckSum <String> [-NodeCompliant <Boolean>] [-LastComplianceTime <DateTime>]
+ [-LastHeartbeatTime <DateTime>] [-Dirty <Boolean>] [-StatusCode <UInt32>] -MDBFilePath <FileInfo> [-WhatIf]
  [-Confirm] [<CommonParameters>]
 ```
 
 ### SQL
 ```
-New-DSCPullServerAdminDevice -ConfigurationID <Guid> -TargetName <String> [-ServerCheckSum <String>]
- [-TargetCheckSum <String>] [-NodeCompliant <Boolean>] [-LastComplianceTime <DateTime>]
+New-DSCPullServerAdminDevice -ConfigurationID <Guid> -TargetName <String> -ServerCheckSum <String>
+ -TargetCheckSum <String> [-NodeCompliant <Boolean>] [-LastComplianceTime <DateTime>]
  [-LastHeartbeatTime <DateTime>] [-Dirty <Boolean>] [-StatusCode <UInt32>] -SQLServer <String>
  [-Credential <PSCredential>] [-Database <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
@@ -89,7 +97,7 @@ Type: String
 Parameter Sets: (All)
 Aliases:
 
-Required: False
+Required: True
 Position: Named
 Default value: None
 Accept pipeline input: True (ByPropertyName)
@@ -104,7 +112,7 @@ Type: String
 Parameter Sets: (All)
 Aliases:
 
-Required: False
+Required: True
 Position: Named
 Default value: None
 Accept pipeline input: True (ByPropertyName)
@@ -208,8 +216,23 @@ Accept wildcard characters: False
 Define the EDB file path to use an ad-hoc ESE connection.
 
 ```yaml
-Type: String
+Type: FileInfo
 Parameter Sets: ESE
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MDBFilePath
+Define the MDB file path to use an ad-hoc MDB connection.
+
+```yaml
+Type: FileInfo
+Parameter Sets: MDB
 Aliases:
 
 Required: True

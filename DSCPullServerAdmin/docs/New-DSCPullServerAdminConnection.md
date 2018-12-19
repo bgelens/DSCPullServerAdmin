@@ -20,7 +20,12 @@ New-DSCPullServerAdminConnection [-SQLServer <String>] [-Credential <PSCredentia
 
 ### ESE
 ```
-New-DSCPullServerAdminConnection -ESEFilePath <String> [-DontStore] [<CommonParameters>]
+New-DSCPullServerAdminConnection -ESEFilePath <FileInfo> [-DontStore] [<CommonParameters>]
+```
+
+### MDB
+```
+New-DSCPullServerAdminConnection -MDBFilePath <FileInfo> [-DontStore] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -56,8 +61,23 @@ New-DSCPullServerAdminConnection -SQLServer sqlserver\instance -Database dscpull
 Specifies the path to the EDB file to be used for the connection.
 
 ```yaml
-Type: String
+Type: FileInfo
 Parameter Sets: ESE
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MDBFilePath
+Specifies the path to the MDB file to be used for the connection.
+
+```yaml
+Type: FileInfo
+Parameter Sets: MDB
 Aliases:
 
 Required: True
@@ -136,9 +156,7 @@ For more information, see about_CommonParameters (http://go.microsoft.com/fwlink
 ## OUTPUTS
 
 ### DSCPullServerSQLConnection
-
 ### DSCPullServerESEConnection
-
 ## NOTES
 
 ## RELATED LINKS

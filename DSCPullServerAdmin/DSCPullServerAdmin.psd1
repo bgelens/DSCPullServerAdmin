@@ -15,7 +15,7 @@ RootModule = 'DSCPullServerAdmin.psm1'
 ModuleVersion = '0.0.1.0'
 
 # Supported PSEditions
-# CompatiblePSEditions = @()
+CompatiblePSEditions = 'Core', 'Desktop'
 
 # ID used to uniquely identify this module
 GUID = 'eb129ddc-06f0-4394-aee7-6ccd9392263c'
@@ -33,7 +33,7 @@ Copyright = '(c) 2018 Ben Gelens. All rights reserved.'
 Description = 'Get, manipulate and migrate data from your DSC Pull Server database (EDB and SQL)'
 
 # Minimum version of the Windows PowerShell engine required by this module
-# PowerShellVersion = ''
+PowerShellVersion = '5.1'
 
 # Name of the Windows PowerShell host required by this module
 # PowerShellHostName = ''
@@ -126,7 +126,11 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = 'MDB Support'
+        ReleaseNotes = '* MDB Support
+* Bug fixes
+* Added wildcard attribute to parameters that support it (MDB does not support wildcards)
+* Added single char ? wildcard support besides *
+* Locked to PSv5.1+'
 
     } # End of PSData hashtable
 

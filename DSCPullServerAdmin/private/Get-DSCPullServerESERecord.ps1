@@ -51,7 +51,10 @@ function Get-DSCPullServerESERecord {
             'LCMVersion',
             'ReportFormatVersion',
             'ConfigurationVersion',
-            'RebootRequested'
+            'RebootRequested',
+            'JobId',
+            'Id',
+            'ConfigurationID'
         )
 
         $boolColumns = @(
@@ -65,12 +68,6 @@ function Get-DSCPullServerESERecord {
             'StartTime',
             'EndTime',
             'LastModifiedTime'
-        )
-
-        $guidColumns = @(
-            'JobId',
-            'Id',
-            'ConfigurationID'
         )
 
         $deserializeColumns = @(
@@ -137,12 +134,6 @@ function Get-DSCPullServerESERecord {
                         )
                     } elseif ($column.Name -in $boolColumns) {
                         $result."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsBoolean(
-                            $Connection.SessionId,
-                            $Connection.TableId,
-                            $column.Columnid
-                        )
-                    } elseif ($column.Name -in $guidColumns) {
-                        $result."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsGuid(
                             $Connection.SessionId,
                             $Connection.TableId,
                             $column.Columnid

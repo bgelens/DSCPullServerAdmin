@@ -22,7 +22,14 @@ New-DSCPullServerAdminRegistration -AgentId <Guid> [-LCMVersion <String>] -NodeN
 ### ESE
 ```
 New-DSCPullServerAdminRegistration -AgentId <Guid> [-LCMVersion <String>] -NodeName <String>
- [-IPAddress <IPAddress[]>] [-ConfigurationNames <String[]>] -ESEFilePath <String> [-WhatIf] [-Confirm]
+ [-IPAddress <IPAddress[]>] [-ConfigurationNames <String[]>] -ESEFilePath <FileInfo> [-WhatIf] [-Confirm]
+ [<CommonParameters>]
+```
+
+### MDB
+```
+New-DSCPullServerAdminRegistration -AgentId <Guid> [-LCMVersion <String>] -NodeName <String>
+ [-IPAddress <IPAddress[]>] [-ConfigurationNames <String[]>] -MDBFilePath <FileInfo> [-WhatIf] [-Confirm]
  [<CommonParameters>]
 ```
 
@@ -145,8 +152,23 @@ Accept wildcard characters: False
 Define the EDB file path to use an ad-hoc ESE connection.
 
 ```yaml
-Type: String
+Type: FileInfo
 Parameter Sets: ESE
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MDBFilePath
+Define the MDB file path to use an ad-hoc MDB connection.
+
+```yaml
+Type: FileInfo
+Parameter Sets: MDB
 Aliases:
 
 Required: True

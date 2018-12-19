@@ -15,6 +15,9 @@
     .PARAMETER ESEFilePath
     Specifies the path to the EDB file to be used for the connection.
 
+    .PARAMETER MDBFilePath
+    Specifies the path to the MDB file to be used for the connection.
+
     .PARAMETER SQLServer
     Specifies the SQL Instance to connect to for the connection.
 
@@ -41,8 +44,12 @@ function New-DSCPullServerAdminConnection {
     [CmdletBinding(DefaultParameterSetName = 'SQL')]
     param (
         [Parameter(Mandatory, ParameterSetName = 'ESE')]
-        [ValidateNotNullOrEmpty()]
-        [string] $ESEFilePath,
+        [ValidateScript({$_ | Assert-DSCPullServerDatabaseFilePath -Type 'ESE'})]
+        [System.IO.FileInfo] $ESEFilePath,
+
+        [Parameter(Mandatory, ParameterSetName = 'MDB')]
+        [ValidateScript({$_ | Assert-DSCPullServerDatabaseFilePath -Type 'MDB'})]
+        [System.IO.FileInfo] $MDBFilePath,
 
         [Parameter(ParameterSetName = 'SQL')]
         [ValidateNotNullOrEmpty()]
@@ -58,6 +65,10 @@ function New-DSCPullServerAdminConnection {
 
         [switch] $DontStore
     )
+
+    if ($PSCmdlet.ParameterSetName -eq 'MDB') {
+        Assert-DSCPullServerMDBPreReq
+    }
 
     $currentConnections = Get-DSCPullServerAdminConnection
     $lastIndex = $currentConnections |
@@ -77,11 +88,14 @@ function New-DSCPullServerAdminConnection {
         if (-not (Test-DSCPullServerDatabaseExist -Connection $connection)) {
             Write-Error -Message "Could not find database with name $($connection.Database) at $($connection.SQLServer)" -ErrorAction Stop
         }
+    } elseif ($PSCmdlet.ParameterSetName -eq 'MDB') {
+        $connection = [DSCPullServerMDBConnection]::New($MDBFilePath)
     } else {
         $connection = [DSCPullServerESEConnection]::New($ESEFilePath)
-        if (-not (Test-DSCPullServerESEDatabase -Connection $connection)) {
-            Write-Error -Message "Database $ESEFilePath is an invalid PullServer Database" -ErrorAction Stop
-        }
+    }
+
+    if (-not (Test-DSCPullServerDatabase -Connection $connection)) {
+        Write-Error -Message "Invalid PullServer Database" -ErrorAction Stop
     }
 
     if (-not $DontStore) {

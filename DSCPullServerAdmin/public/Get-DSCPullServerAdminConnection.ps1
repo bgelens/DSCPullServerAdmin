@@ -27,6 +27,7 @@
 function Get-DSCPullServerAdminConnection {
     [OutputType([DSCPullServerSQLConnection])]
     [OutputType([DSCPullServerESEConnection])]
+    [OutputType([DSCPullServerMDBConnection])]
     [CmdletBinding()]
     param (
         [Parameter()]

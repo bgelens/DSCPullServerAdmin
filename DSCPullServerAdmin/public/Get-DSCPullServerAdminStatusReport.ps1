@@ -13,6 +13,7 @@
 
     .PARAMETER NodeName
     Return the reports with the specific NodeName.
+    Wildcards are supported for SQL and ESE connections but not for MDB connection.
 
     .PARAMETER JobId
     Return the reports with the specific JobId (Key).
@@ -43,6 +44,9 @@
     .PARAMETER ESEFilePath
     Define the EDB file path to use an ad-hoc ESE connection.
 
+    .PARAMETER MDBFilePath
+    Define the MDB file path to use an ad-hoc MDB connection.
+
     .PARAMETER SQLServer
     Define the SQL Instance to use in an ad-hoc SQL connection.
 
@@ -64,6 +68,7 @@ function Get-DSCPullServerAdminStatusReport {
 
         [Parameter()]
         [ValidateNotNullOrEmpty()]
+        [SupportsWildcards()]
         [Alias('Name')]
         [string] $NodeName,
 
@@ -90,8 +95,12 @@ function Get-DSCPullServerAdminStatusReport {
         [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
 
         [Parameter(Mandatory, ParameterSetName = 'ESE')]
-        [ValidateNotNullOrEmpty()]
-        [string] $ESEFilePath,
+        [ValidateScript({$_ | Assert-DSCPullServerDatabaseFilePath -Type 'ESE'})]
+        [System.IO.FileInfo] $ESEFilePath,
+
+        [Parameter(Mandatory, ParameterSetName = 'MDB')]
+        [ValidateScript({$_ | Assert-DSCPullServerDatabaseFilePath -Type 'MDB'})]
+        [System.IO.FileInfo] $MDBFilePath,
 
         [Parameter(Mandatory, ParameterSetName = 'SQL')]
         [ValidateNotNullOrEmpty()]
@@ -157,7 +166,7 @@ function Get-DSCPullServerAdminStatusReport {
                     [void] $filters.Add(("Id = '{0}'" -f $AgentId))
                 }
                 if ($PSBoundParameters.ContainsKey("NodeName")) {
-                    [void] $filters.Add(("NodeName like '{0}'" -f $NodeName.Replace('*', '%')))
+                    [void] $filters.Add(("NodeName like '{0}'" -f $NodeName.Replace('*', '%').Replace('?', '_')))
                 }
                 if ($PSBoundParameters.ContainsKey("FromStartTime")) {
                     [void] $filters.Add(("StartTime >= '{0}'" -f (Get-Date $FromStartTime -f s)))
@@ -178,6 +187,49 @@ function Get-DSCPullServerAdminStatusReport {
                 }
 
                 Invoke-DSCPullServerSQLCommand -Connection $Connection -Script $tsqlScript | ForEach-Object {
+                    try {
+                        [DSCNodeStatusReport]::New($_)
+                    } catch {
+                        Write-Error -ErrorRecord $_ -ErrorAction Continue
+                    }
+                }
+            }
+            MDB {
+                if ($PSBoundParameters.ContainsKey('All')) {
+                    $tsqlScript = 'SELECT * FROM StatusReport'
+                } else {
+                    $tsqlScript = 'SELECT TOP {0} * FROM StatusReport' -f $Top
+                }
+                $filters = [System.Collections.ArrayList]::new()
+                if ($PSBoundParameters.ContainsKey('AgentId')) {
+                    [void] $filters.Add(("Id = '{0}'" -f $AgentId))
+                }
+                if ($PSBoundParameters.ContainsKey("NodeName")) {
+                    if ([System.Management.Automation.WildcardPattern]::ContainsWildcardCharacters($NodeName)) {
+                        Write-Error -Message "MDB connection does not support wildcards for NodeName" -ErrorAction Stop
+                    } else {
+                        [void] $filters.Add(("NodeName = '{0}'" -f $NodeName))
+                    }
+                }
+                if ($PSBoundParameters.ContainsKey("FromStartTime")) {
+                    [void] $filters.Add(("StartTime >= '{0}'" -f (Get-Date $FromStartTime -f s)))
+                }
+                if ($PSBoundParameters.ContainsKey("ToStartTime")) {
+                    [void] $filters.Add(("StartTime <= '{0}'" -f (Get-Date $ToStartTime -f s)))
+                }
+                if ($PSBoundParameters.ContainsKey("JobId")) {
+                    [void] $filters.Add(("JobId = '{0}'" -f $JobId))
+                }
+
+                if ($OperationType -ne 'All') {
+                    [void] $filters.Add("OperationType = '{0}'" -f $OperationType)
+                }
+
+                if ($filters.Count -ge 1) {
+                    $tsqlScript += " WHERE {0}" -f ($filters -join ' AND ')
+                }
+
+                Invoke-DSCPullServerMDBCommand -Connection $Connection -Script $tsqlScript | ForEach-Object {
                     try {
                         [DSCNodeStatusReport]::New($_)
                     } catch {

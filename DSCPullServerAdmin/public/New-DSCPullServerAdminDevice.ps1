@@ -44,6 +44,9 @@
     .PARAMETER ESEFilePath
     Define the EDB file path to use an ad-hoc ESE connection.
 
+    .PARAMETER MDBFilePath
+    Define the MDB file path to use an ad-hoc MDB connection.
+
     .PARAMETER SQLServer
     Define the SQL Instance to use in an ad-hoc SQL connection.
 
@@ -70,10 +73,12 @@ function New-DSCPullServerAdminDevice {
         [ValidateNotNullOrEmpty()]
         [string] $TargetName,
 
-        [Parameter(ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()]
         [string] $ServerCheckSum,
 
-        [Parameter(ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()]
         [string] $TargetCheckSum,
 
         [Parameter(ValueFromPipelineByPropertyName)]
@@ -95,8 +100,12 @@ function New-DSCPullServerAdminDevice {
         [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
 
         [Parameter(Mandatory, ParameterSetName = 'ESE')]
-        [ValidateNotNullOrEmpty()]
-        [string] $ESEFilePath,
+        [ValidateScript({$_ | Assert-DSCPullServerDatabaseFilePath -Type 'ESE'})]
+        [System.IO.FileInfo] $ESEFilePath,
+
+        [Parameter(Mandatory, ParameterSetName = 'MDB')]
+        [ValidateScript({$_ | Assert-DSCPullServerDatabaseFilePath -Type 'MDB'})]
+        [System.IO.FileInfo] $MDBFilePath,
 
         [Parameter(Mandatory, ParameterSetName = 'SQL')]
         [ValidateNotNullOrEmpty()]
@@ -150,6 +159,13 @@ function New-DSCPullServerAdminDevice {
 
                 if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
                     Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                }
+            }
+            MDB {
+                $tsqlScript = $device.GetMDBInsert()
+
+                if ($PSCmdlet.ShouldProcess($Connection.MDBFilePath, $tsqlScript)) {
+                    Invoke-DSCPullServerMDBCommand -Connection $Connection -CommandType Set -Script $tsqlScript
                 }
             }
         }

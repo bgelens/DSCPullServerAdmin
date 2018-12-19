@@ -1,4 +1,4 @@
-$enums = Get-ChildItem -Path $PSScriptRoot\enums\*.ps1 -ErrorAction SilentlyContinue | ForEach-Object -Process {
+﻿$enums = Get-ChildItem -Path $PSScriptRoot\enums\*.ps1 -ErrorAction SilentlyContinue | ForEach-Object -Process {
     Get-Content $_.FullName
 }
 

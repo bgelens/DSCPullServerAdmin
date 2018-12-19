@@ -1,4 +1,4 @@
-class DSCNodeStatusReport {
+class DSCNodeStatusReport : DSCBaseClass {
     [Guid] $JobId
 
     [Guid] $Id
@@ -33,9 +33,9 @@ class DSCNodeStatusReport {
 
     [PSObject[]] $AdditionalData
 
-    DSCNodeStatusReport () {}
+    DSCNodeStatusReport () : base([DSCDatabaseTable]::StatusReport) { }
 
-    DSCNodeStatusReport ([System.Data.Common.DbDataRecord] $Input) {
+    DSCNodeStatusReport ([System.Data.Common.DbDataRecord] $Input) : base([DSCDatabaseTable]::StatusReport) {
         for ($i = 0; $i -lt $Input.FieldCount; $i++) {
             $name = $Input.GetName($i)
             $data = $null
@@ -61,71 +61,5 @@ class DSCNodeStatusReport {
                 $this."$name" = $data
             }
         }
-    }
-
-    [string] GetSQLUpdate () {
-        $query = "UPDATE StatusReport Set {0} WHERE JobId = '{1}'" -f @(
-            (($this | Get-Member -MemberType Property).Where{
-                $_.Name -ne 'JobId'
-            }.foreach{
-                if ($_.Name -eq 'LastModifiedTime') {
-                    # skip as missing in SQL table, only present in EDB
-                } elseif ($_.Name -eq 'IPAddress') {
-                    "$($_.Name) = '{0}'" -f ($this."$($_.Name)" -join ';')
-                } elseif ($_.Name -in 'StatusData', 'Errors') {
-                    "$($_.Name) = '[{0}]'" -f (($this."$($_.Name)" | ConvertTo-Json -Compress -Depth 100) | ConvertTo-Json -Compress)
-                } elseif ($_.Name -eq 'AdditionalData') {
-                    "$($_.Name) = '[{0}]'" -f ($this."$($_.Name)" | ConvertTo-Json -Compress -Depth 100)
-                } else {
-                    if ($_.Definition.Split(' ')[0] -like '*datetime*' -and -not $null -eq $this."$($_.Name)") {
-                        if ($this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss') -eq '0001-01-01 00:00:00') {
-                            "$($_.Name) = NULL"
-                        } else {
-                            "$($_.Name) = '{0}'" -f $this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss')
-                        }
-                    } elseif ($_.Definition.Split(' ')[0] -like '*nullable*' -and $null -eq $this."$($_.Name)") {
-                        "$($_.Name) = NULL"
-                    } else {
-                        "$($_.Name) = '{0}'" -f $this."$($_.Name)"
-                    }
-                }
-            } -join ','),
-            $this.JobId
-        )
-        return $query
-    }
-
-    [string] GetSQLInsert () {
-        $query = ("INSERT INTO StatusReport ({0}) VALUES ({1})" -f @(
-            (($this | Get-Member -MemberType Property | Where-Object -FilterScript {$_.Name -ne 'LastModifiedTime'}).Name -join ','),
-            (($this | Get-Member -MemberType Property).ForEach{
-                if ($_.Name -eq 'LastModifiedTime') {
-                    # skip as missing in SQL table, only present in EDB
-                } elseif ($_.Name -eq 'IPAddress') {
-                    "'{0}'" -f ($this."$($_.Name)" -join ';')
-                } elseif ($_.Name -in 'StatusData', 'Errors') {
-                    "'[{0}]'" -f (($this."$($_.Name)" | ConvertTo-Json -Compress -Depth 100) | ConvertTo-Json -Compress)
-                } elseif ($_.Name -eq 'AdditionalData') {
-                    "'{0}'" -f ($this."$($_.Name)" | ConvertTo-Json -Compress -Depth 100)
-                } else {
-                    if ($_.Definition.Split(' ')[0] -like '*datetime*' -and -not $null -eq $this."$($_.Name)") {
-                        if ($this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss') -eq '0001-01-01 00:00:00') {
-                            'NULL'
-                        } else {
-                            "'{0}'" -f $this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss')
-                        }
-                    } elseif ($_.Definition.Split(' ')[0] -like '*nullable*' -and $null -eq $this."$($_.Name)") {
-                        'NULL'
-                    } else {
-                        "'{0}'" -f $this."$($_.Name)"
-                    }
-                }
-            } -join ',')
-        ))
-        return $query
-    }
-
-    [string] GetSQLDelete () {
-        return ("DELETE FROM StatusReport WHERE JobId = '{0}'" -f $this.JobId)
     }
 }

@@ -22,13 +22,23 @@ Set-DSCPullServerAdminStatusReport -InputObject <DSCNodeStatusReport> [-Id <Guid
  [-Confirm] [<CommonParameters>]
 ```
 
+### InputObject_MDB
+```
+Set-DSCPullServerAdminStatusReport -InputObject <DSCNodeStatusReport> [-Id <Guid>] [-OperationType <String>]
+ [-RefreshMode <String>] [-Status <String>] [-LCMVersion <String>] [-ReportFormatVersion <String>]
+ [-ConfigurationVersion <String>] [-NodeName <String>] [-IPAddress <IPAddress[]>] [-StartTime <DateTime>]
+ [-EndTime <DateTime>] [-LastModifiedTime <DateTime>] [-Errors <PSObject[]>] [-StatusData <PSObject[]>]
+ [-RebootRequested <Boolean>] [-AdditionalData <PSObject[]>] -MDBFilePath <FileInfo> [-WhatIf] [-Confirm]
+ [<CommonParameters>]
+```
+
 ### InputObject_ESE
 ```
 Set-DSCPullServerAdminStatusReport -InputObject <DSCNodeStatusReport> [-Id <Guid>] [-OperationType <String>]
  [-RefreshMode <String>] [-Status <String>] [-LCMVersion <String>] [-ReportFormatVersion <String>]
  [-ConfigurationVersion <String>] [-NodeName <String>] [-IPAddress <IPAddress[]>] [-StartTime <DateTime>]
  [-EndTime <DateTime>] [-LastModifiedTime <DateTime>] [-Errors <PSObject[]>] [-StatusData <PSObject[]>]
- [-RebootRequested <Boolean>] [-AdditionalData <PSObject[]>] -ESEFilePath <String> [-WhatIf] [-Confirm]
+ [-RebootRequested <Boolean>] [-AdditionalData <PSObject[]>] -ESEFilePath <FileInfo> [-WhatIf] [-Confirm]
  [<CommonParameters>]
 ```
 
@@ -42,13 +52,22 @@ Set-DSCPullServerAdminStatusReport -InputObject <DSCNodeStatusReport> [-Id <Guid
  [-Database <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
+### Manual_MDB
+```
+Set-DSCPullServerAdminStatusReport -JobId <Guid> [-Id <Guid>] [-OperationType <String>] [-RefreshMode <String>]
+ [-Status <String>] [-LCMVersion <String>] [-ReportFormatVersion <String>] [-ConfigurationVersion <String>]
+ [-NodeName <String>] [-IPAddress <IPAddress[]>] [-StartTime <DateTime>] [-EndTime <DateTime>]
+ [-LastModifiedTime <DateTime>] [-Errors <PSObject[]>] [-StatusData <PSObject[]>] [-RebootRequested <Boolean>]
+ [-AdditionalData <PSObject[]>] -MDBFilePath <FileInfo> [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
 ### Manual_ESE
 ```
 Set-DSCPullServerAdminStatusReport -JobId <Guid> [-Id <Guid>] [-OperationType <String>] [-RefreshMode <String>]
  [-Status <String>] [-LCMVersion <String>] [-ReportFormatVersion <String>] [-ConfigurationVersion <String>]
  [-NodeName <String>] [-IPAddress <IPAddress[]>] [-StartTime <DateTime>] [-EndTime <DateTime>]
  [-LastModifiedTime <DateTime>] [-Errors <PSObject[]>] [-StatusData <PSObject[]>] [-RebootRequested <Boolean>]
- [-AdditionalData <PSObject[]>] -ESEFilePath <String> [-WhatIf] [-Confirm] [<CommonParameters>]
+ [-AdditionalData <PSObject[]>] -ESEFilePath <FileInfo> [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### Manual_SQL
@@ -96,7 +115,7 @@ Pass in the statusreport object to be modified from the database.
 
 ```yaml
 Type: DSCNodeStatusReport
-Parameter Sets: InputObject_Connection, InputObject_ESE, InputObject_SQL
+Parameter Sets: InputObject_Connection, InputObject_MDB, InputObject_ESE, InputObject_SQL
 Aliases:
 
 Required: True
@@ -111,7 +130,7 @@ Modify properties for the statusreport with specified JobId.
 
 ```yaml
 Type: Guid
-Parameter Sets: Manual_ESE, Manual_SQL, Manual_Connection
+Parameter Sets: Manual_MDB, Manual_ESE, Manual_SQL, Manual_Connection
 Aliases:
 
 Required: True
@@ -383,8 +402,23 @@ Accept wildcard characters: False
 Define the EDB file path to use an ad-hoc ESE connection.
 
 ```yaml
-Type: String
+Type: FileInfo
 Parameter Sets: InputObject_ESE, Manual_ESE
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MDBFilePath
+Define the MDB file path to use an ad-hoc MDB connection.
+
+```yaml
+Type: FileInfo
+Parameter Sets: InputObject_MDB, Manual_MDB
 Aliases:
 
 Required: True

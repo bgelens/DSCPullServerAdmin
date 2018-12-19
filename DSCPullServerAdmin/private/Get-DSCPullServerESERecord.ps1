@@ -160,11 +160,16 @@ function Get-DSCPullServerESERecord {
                             $column.Columnid
                         )
                     } elseif ($column.Name -in $deserializeColumns) {
-                        $result."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::DeserializeObjectFromColumn(
+                        $data = [Microsoft.Isam.Esent.Interop.Api]::DeserializeObjectFromColumn(
                             $Connection.SessionId,
                             $Connection.TableId,
                             $column.Columnid
                         )
+                        if ($column.Name -eq 'StatusData') {
+                            $result."$($column.Name)" = $data | ConvertFrom-Json -ErrorAction SilentlyContinue
+                        } else {
+                            $result."$($column.Name)" = $data
+                        }
                     } elseif ($column.Name -in $convertFromJsonColumns) {
                         $result."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
                             $Connection.SessionId,

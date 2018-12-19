@@ -41,7 +41,7 @@ InModuleScope $moduleName {
         }
 
         It 'Should create a new ESE conneciton when ParameterSetname is ESE' {
-            $result = PreProc -ParameterSetName 'ESE' -ESEFilePath 'bogusPath'
+            $result = PreProc -ParameterSetName 'ESE' -ESEFilePath 'bogusPath.edb'
 
             $result | Should -Contain 'ESEFilePath'
             Assert-MockCalled -CommandName New-DSCPullServerAdminConnection -Times 1 -Exactly -Scope It

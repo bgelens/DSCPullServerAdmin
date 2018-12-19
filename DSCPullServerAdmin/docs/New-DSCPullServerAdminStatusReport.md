@@ -28,7 +28,16 @@ New-DSCPullServerAdminStatusReport -JobId <Guid> [-Id <Guid>] [-OperationType <S
  [-Status <String>] [-LCMVersion <String>] [-ReportFormatVersion <String>] [-ConfigurationVersion <String>]
  [-NodeName <String>] [-IPAddress <IPAddress[]>] [-StartTime <DateTime>] [-EndTime <DateTime>]
  [-LastModifiedTime <DateTime>] [-Errors <PSObject[]>] [-StatusData <PSObject[]>] [-RebootRequested <Boolean>]
- [-AdditionalData <PSObject[]>] -ESEFilePath <String> [-WhatIf] [-Confirm] [<CommonParameters>]
+ [-AdditionalData <PSObject[]>] -ESEFilePath <FileInfo> [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
+### MDB
+```
+New-DSCPullServerAdminStatusReport -JobId <Guid> [-Id <Guid>] [-OperationType <String>] [-RefreshMode <String>]
+ [-Status <String>] [-LCMVersion <String>] [-ReportFormatVersion <String>] [-ConfigurationVersion <String>]
+ [-NodeName <String>] [-IPAddress <IPAddress[]>] [-StartTime <DateTime>] [-EndTime <DateTime>]
+ [-LastModifiedTime <DateTime>] [-Errors <PSObject[]>] [-StatusData <PSObject[]>] [-RebootRequested <Boolean>]
+ [-AdditionalData <PSObject[]>] -MDBFilePath <FileInfo> [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### SQL
@@ -333,8 +342,23 @@ Accept wildcard characters: False
 Define the EDB file path to use an ad-hoc ESE connection.
 
 ```yaml
-Type: String
+Type: FileInfo
 Parameter Sets: ESE
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MDBFilePath
+Define the MDB file path to use an ad-hoc MDB connection.
+
+```yaml
+Type: FileInfo
+Parameter Sets: MDB
 Aliases:
 
 Required: True

@@ -68,6 +68,9 @@
     .PARAMETER ESEFilePath
     Define the EDB file path to use an ad-hoc ESE connection.
 
+    .PARAMETER MDBFilePath
+    Define the MDB file path to use an ad-hoc MDB connection.
+
     .PARAMETER SQLServer
     Define the SQL Instance to use in an ad-hoc SQL connection.
 
@@ -142,8 +145,12 @@ function New-DSCPullServerAdminStatusReport {
         [DSCPullServerConnection] $Connection = (Get-DSCPullServerAdminConnection -OnlyShowActive),
 
         [Parameter(Mandatory, ParameterSetName = 'ESE')]
-        [ValidateNotNullOrEmpty()]
-        [string] $ESEFilePath,
+        [ValidateScript({$_ | Assert-DSCPullServerDatabaseFilePath -Type 'ESE'})]
+        [System.IO.FileInfo] $ESEFilePath,
+
+        [Parameter(Mandatory, ParameterSetName = 'MDB')]
+        [ValidateScript({$_ | Assert-DSCPullServerDatabaseFilePath -Type 'MDB'})]
+        [System.IO.FileInfo] $MDBFilePath,
 
         [Parameter(Mandatory, ParameterSetName = 'SQL')]
         [ValidateNotNullOrEmpty()]
@@ -197,6 +204,13 @@ function New-DSCPullServerAdminStatusReport {
 
                 if ($PSCmdlet.ShouldProcess("$($Connection.SQLServer)\$($Connection.Database)", $tsqlScript)) {
                     Invoke-DSCPullServerSQLCommand -Connection $Connection -CommandType Set -Script $tsqlScript
+                }
+            }
+            MDB {
+                $tsqlScript = $report.GetMDBInsert()
+
+                if ($PSCmdlet.ShouldProcess($Connection.MDBFilePath, $tsqlScript)) {
+                    Invoke-DSCPullServerMDBCommand -Connection $Connection -CommandType Set -Script $tsqlScript
                 }
             }
         }

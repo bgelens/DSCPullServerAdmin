@@ -1,4 +1,4 @@
-class DSCDevice {
+class DSCDevice : DSCBaseClass {
     [string] $TargetName
 
     [guid] $ConfigurationID
@@ -21,9 +21,9 @@ class DSCDevice {
         $this.GetStatus()
     })"
 
-    DSCDevice () {}
+    DSCDevice () : base([DSCDatabaseTable]::Devices) { }
 
-    DSCDevice ([System.Data.Common.DbDataRecord] $Input) {
+    DSCDevice ([System.Data.Common.DbDataRecord] $Input) : base([DSCDatabaseTable]::Devices) {
         for ($i = 0; $i -lt $Input.FieldCount; $i++) {
             $name = $Input.GetName($i)
             if (([DBNull]::Value).Equals($Input[$i])) {
@@ -68,55 +68,5 @@ class DSCDevice {
             29 = 'Invalid Debug Mode in meta-configuration'
         }
         return $deviceStatusCodeMap[$this.StatusCode]
-    }
-
-    [string] GetSQLUpdate () {
-        $query = "UPDATE Devices Set {0} WHERE TargetName = '{1}'" -f @(
-            (($this | Get-Member -MemberType Property).Where{
-                $_.Name -notin 'TargetName', 'Status'
-            }.foreach{
-                if ($_.Definition.Split(' ')[0] -like '*datetime*' -and -not $null -eq $this."$($_.Name)") {
-                    if ($this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss') -eq '0001-01-01 00:00:00') {
-                        "$($_.Name) = NULL"
-                    } else {
-                        "$($_.Name) = '{0}'" -f $this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss')
-                    }
-                } elseif ($_.Definition.Split(' ')[0] -like '*nullable*' -and $null -eq $this."$($_.Name)") {
-                    "$($_.Name) = NULL"
-                } else {
-                    "$($_.Name) = '{0}'" -f $this."$($_.Name)"
-                }
-            } -join ','),
-            $this.TargetName
-        )
-        return $query
-    }
-
-    [string] GetSQLInsert () {
-        $query = ("INSERT INTO Devices ({0}) VALUES ({1})" -f @(
-            (($this | Get-Member -MemberType Property | Where-Object -FilterScript {$_.Name -ne 'Status'}).Name -join ','),
-            (($this | Get-Member -MemberType Property).ForEach{
-                if ($_.Name -eq 'Status') {
-                    return
-                } else {
-                    if ($_.Definition.Split(' ')[0] -like '*datetime*' -and -not $null -eq $this."$($_.Name)") {
-                        if ($this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss') -eq '0001-01-01 00:00:00') {
-                            'NULL'
-                        } else {
-                            "'{0}'" -f $this."$($_.Name)".ToString('yyyy-MM-dd HH:mm:ss')
-                        }
-                    } elseif ($_.Definition.Split(' ')[0] -like '*nullable*' -and $null -eq $this."$($_.Name)") {
-                        'NULL'
-                    } else {
-                        "'{0}'" -f $this."$($_.Name)"
-                    }
-                }
-            } -join ',')
-        ))
-        return $query
-    }
-
-    [string] GetSQLDelete () {
-        return ("DELETE FROM Devices WHERE TargetName = '{0}'" -f $this.TargetName)
     }
 }

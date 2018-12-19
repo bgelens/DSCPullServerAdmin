@@ -20,11 +20,19 @@ Set-DSCPullServerAdminDevice -InputObject <DSCDevice> [-ConfigurationID <Guid>] 
  [-Connection <DSCPullServerConnection>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
+### InputObject_MDB
+```
+Set-DSCPullServerAdminDevice -InputObject <DSCDevice> [-ConfigurationID <Guid>] [-ServerCheckSum <String>]
+ [-TargetCheckSum <String>] [-NodeCompliant <Boolean>] [-LastComplianceTime <DateTime>]
+ [-LastHeartbeatTime <DateTime>] [-Dirty <Boolean>] [-StatusCode <UInt32>] -MDBFilePath <FileInfo> [-WhatIf]
+ [-Confirm] [<CommonParameters>]
+```
+
 ### InputObject_ESE
 ```
 Set-DSCPullServerAdminDevice -InputObject <DSCDevice> [-ConfigurationID <Guid>] [-ServerCheckSum <String>]
  [-TargetCheckSum <String>] [-NodeCompliant <Boolean>] [-LastComplianceTime <DateTime>]
- [-LastHeartbeatTime <DateTime>] [-Dirty <Boolean>] [-StatusCode <UInt32>] -ESEFilePath <String> [-WhatIf]
+ [-LastHeartbeatTime <DateTime>] [-Dirty <Boolean>] [-StatusCode <UInt32>] -ESEFilePath <FileInfo> [-WhatIf]
  [-Confirm] [<CommonParameters>]
 ```
 
@@ -36,11 +44,19 @@ Set-DSCPullServerAdminDevice -InputObject <DSCDevice> [-ConfigurationID <Guid>] 
  [-Credential <PSCredential>] [-Database <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
+### Manual_MDB
+```
+Set-DSCPullServerAdminDevice [-ConfigurationID <Guid>] -TargetName <String> [-ServerCheckSum <String>]
+ [-TargetCheckSum <String>] [-NodeCompliant <Boolean>] [-LastComplianceTime <DateTime>]
+ [-LastHeartbeatTime <DateTime>] [-Dirty <Boolean>] [-StatusCode <UInt32>] -MDBFilePath <FileInfo> [-WhatIf]
+ [-Confirm] [<CommonParameters>]
+```
+
 ### Manual_ESE
 ```
 Set-DSCPullServerAdminDevice [-ConfigurationID <Guid>] -TargetName <String> [-ServerCheckSum <String>]
  [-TargetCheckSum <String>] [-NodeCompliant <Boolean>] [-LastComplianceTime <DateTime>]
- [-LastHeartbeatTime <DateTime>] [-Dirty <Boolean>] [-StatusCode <UInt32>] -ESEFilePath <String> [-WhatIf]
+ [-LastHeartbeatTime <DateTime>] [-Dirty <Boolean>] [-StatusCode <UInt32>] -ESEFilePath <FileInfo> [-WhatIf]
  [-Confirm] [<CommonParameters>]
 ```
 
@@ -85,7 +101,7 @@ Pass in the device object to be modified from the database.
 
 ```yaml
 Type: DSCDevice
-Parameter Sets: InputObject_Connection, InputObject_ESE, InputObject_SQL
+Parameter Sets: InputObject_Connection, InputObject_MDB, InputObject_ESE, InputObject_SQL
 Aliases:
 
 Required: True
@@ -115,7 +131,7 @@ Modify properties for the device with specified TargetName.
 
 ```yaml
 Type: String
-Parameter Sets: Manual_ESE, Manual_SQL, Manual_Connection
+Parameter Sets: Manual_MDB, Manual_ESE, Manual_SQL, Manual_Connection
 Aliases:
 
 Required: True
@@ -252,8 +268,23 @@ Accept wildcard characters: False
 Define the EDB file path to use an ad-hoc ESE connection.
 
 ```yaml
-Type: String
+Type: FileInfo
 Parameter Sets: InputObject_ESE, Manual_ESE
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MDBFilePath
+Define the MDB file path to use an ad-hoc MDB connection.
+
+```yaml
+Type: FileInfo
+Parameter Sets: InputObject_MDB, Manual_MDB
 Aliases:
 
 Required: True

@@ -18,9 +18,15 @@ Remove-DSCPullServerAdminDevice -InputObject <DSCDevice> [-Connection <DSCPullSe
  [-Confirm] [<CommonParameters>]
 ```
 
+### InputObject_MDB
+```
+Remove-DSCPullServerAdminDevice -InputObject <DSCDevice> -MDBFilePath <FileInfo> [-WhatIf] [-Confirm]
+ [<CommonParameters>]
+```
+
 ### InputObject_ESE
 ```
-Remove-DSCPullServerAdminDevice -InputObject <DSCDevice> -ESEFilePath <String> [-WhatIf] [-Confirm]
+Remove-DSCPullServerAdminDevice -InputObject <DSCDevice> -ESEFilePath <FileInfo> [-WhatIf] [-Confirm]
  [<CommonParameters>]
 ```
 
@@ -30,9 +36,15 @@ Remove-DSCPullServerAdminDevice -InputObject <DSCDevice> -SQLServer <String> [-C
  [-Database <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
+### Manual_MDB
+```
+Remove-DSCPullServerAdminDevice -TargetName <String> -MDBFilePath <FileInfo> [-WhatIf] [-Confirm]
+ [<CommonParameters>]
+```
+
 ### Manual_ESE
 ```
-Remove-DSCPullServerAdminDevice -TargetName <String> -ESEFilePath <String> [-WhatIf] [-Confirm]
+Remove-DSCPullServerAdminDevice -TargetName <String> -ESEFilePath <FileInfo> [-WhatIf] [-Confirm]
  [<CommonParameters>]
 ```
 
@@ -72,7 +84,7 @@ Pass in the device object to be removed from the database.
 
 ```yaml
 Type: DSCDevice
-Parameter Sets: InputObject_Connection, InputObject_ESE, InputObject_SQL
+Parameter Sets: InputObject_Connection, InputObject_MDB, InputObject_ESE, InputObject_SQL
 Aliases:
 
 Required: True
@@ -87,7 +99,7 @@ Define the TargetName of the device to be removed from the database.
 
 ```yaml
 Type: String
-Parameter Sets: Manual_ESE, Manual_SQL, Manual_Connection
+Parameter Sets: Manual_MDB, Manual_ESE, Manual_SQL, Manual_Connection
 Aliases:
 
 Required: True
@@ -119,8 +131,23 @@ Accept wildcard characters: False
 Define the EDB file path to use an ad-hoc ESE connection.
 
 ```yaml
-Type: String
+Type: FileInfo
 Parameter Sets: InputObject_ESE, Manual_ESE
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MDBFilePath
+Define the MDB file path to use an ad-hoc MDB connection.
+
+```yaml
+Type: FileInfo
+Parameter Sets: InputObject_MDB, Manual_MDB
 Aliases:
 
 Required: True

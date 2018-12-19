@@ -23,7 +23,6 @@ $private = Get-ChildItem -Path $PSScriptRoot\Private\*.ps1 -Exclude WIP* -ErrorA
 }
 
 $moduleContent = @'
-Add-Type -Path 'C:\Windows\Microsoft.NET\assembly\GAC_MSIL\microsoft.isam.esent.interop\*\Microsoft.Isam.Esent.Interop.dll'
 $DSCPullServerConnections = [System.Collections.ArrayList]::new()
 {0}
 {1}

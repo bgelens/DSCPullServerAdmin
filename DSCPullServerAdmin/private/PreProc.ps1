@@ -13,6 +13,8 @@ function PreProc {
 
         [string] $ESEFilePath,
 
+        [string] $MDBFilePath,
+
         [Parameter(ValueFromRemainingArguments)]
         $DroppedParams
     )
@@ -42,6 +44,13 @@ function PreProc {
                 DontStore = $true
             }
             New-DSCPullServerAdminConnection @newESEArgs
+        }
+        *MDB {
+            $newMDBArgs = @{
+                MDBFilePath = $MDBFilePath
+                DontStore = $true
+            }
+            New-DSCPullServerAdminConnection @newMDBArgs
         }
     }
 }

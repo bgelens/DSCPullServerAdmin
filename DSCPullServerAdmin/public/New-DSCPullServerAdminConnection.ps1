@@ -70,6 +70,10 @@ function New-DSCPullServerAdminConnection {
         Assert-DSCPullServerMDBPreReq
     }
 
+    if ($PSCmdlet.ParameterSetName -eq 'ESE') {
+        Assert-DSCPullServerESEPreReq
+    }
+
     $currentConnections = Get-DSCPullServerAdminConnection
     $lastIndex = $currentConnections |
         Sort-Object -Property Index -Descending |

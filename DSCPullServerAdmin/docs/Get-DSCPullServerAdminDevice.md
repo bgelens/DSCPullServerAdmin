@@ -58,6 +58,7 @@ Get-DSCPullServerAdminDevice
 
 ### -TargetName
 Return the device with the specific TargetName.
+Wildcards are supported for SQL and ESE connections but not for MDB connection.
 
 ```yaml
 Type: String
@@ -68,7 +69,7 @@ Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False
-Accept wildcard characters: False
+Accept wildcard characters: True
 ```
 
 ### -ConfigurationID

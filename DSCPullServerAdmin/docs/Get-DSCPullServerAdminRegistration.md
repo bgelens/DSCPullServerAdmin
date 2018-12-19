@@ -68,6 +68,7 @@ Accept wildcard characters: False
 
 ### -NodeName
 Return the registation with the specific NodeName (Non-key, could be more than 1 result).
+Wildcards are supported for SQL and ESE connections but not for MDB connection.
 
 ```yaml
 Type: String
@@ -78,7 +79,7 @@ Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False
-Accept wildcard characters: False
+Accept wildcard characters: True
 ```
 
 ### -Connection

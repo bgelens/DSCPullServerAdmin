@@ -40,23 +40,6 @@ function Get-DSCPullServerESERecord {
         [uint16] $Top
     )
     begin {
-        $stringColumns = @(
-            'TargetName',
-            'ServerCheckSum',
-            'TargetChecksum',
-            'NodeName',
-            'OperationType',
-            'RefreshMode',
-            'Status',
-            'LCMVersion',
-            'ReportFormatVersion',
-            'ConfigurationVersion',
-            'RebootRequested',
-            'JobId',
-            'Id',
-            'ConfigurationID'
-        )
-
         $boolColumns = @(
             'NodeCompliant',
             'Dirty'
@@ -94,7 +77,10 @@ function Get-DSCPullServerESERecord {
     process {
         try {
             $recordCount = 0
-            while ([Microsoft.Isam.Esent.Interop.Api]::TryMoveNext($Connection.SessionId, $Connection.TableId)) {
+            $FirstMove = $true
+
+            while (Move-DSCPullServerESERecordPosition -Connection $Connection -Table $Table -FirstMove $FirstMove) {
+                $FirstMove = $false
                 if ($PSBoundParameters.ContainsKey('Top') -and $Top -eq $recordCount) {
                     break
                 }
@@ -125,13 +111,6 @@ function Get-DSCPullServerESERecord {
                                 $_
                             } catch {}
                         }
-                    } elseif ($column.Name -in $stringColumns) {
-                        $result."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
-                            $Connection.SessionId,
-                            $Connection.TableId,
-                            $column.Columnid,
-                            [System.Text.Encoding]::Unicode
-                        )
                     } elseif ($column.Name -in $boolColumns) {
                         $result."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsBoolean(
                             $Connection.SessionId,

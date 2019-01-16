@@ -126,12 +126,10 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = 'Cross Platform support (Only SQL is supported xPlat. MDB and ESE are not)
-* Removed Microsoft.Isam.Esent.Interop from RequiredAssemblies
-* Load Microsoft.Isam.Esent.Interop when available
-* removed RetrieveColumnAsGuid and moved properties to RetrieveColumnAsString as something broke on latest w10 insiders
+        ReleaseNotes = 'EDB Fixes:
 
-* Fix ad-hoc mdb database access did not process as PreProc was missing MDB logic'
+* StatusReport move from Last to Previous. Issue: #43.
+* Registration and devices from from First to Next. Issue: #51'
 
     } # End of PSData hashtable
 

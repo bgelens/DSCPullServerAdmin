@@ -39,7 +39,7 @@ function Set-DSCPullServerESERecord {
                         $Connection.SessionId,
                         $Connection.TableId,
                         $columnDictionary[$_],
-                        $InputObject.$_
+                        [Collections.Generic.List[String]]$InputObject.$_
                     )
                 } elseif ($_ -eq 'IPAddress') {
                     [Microsoft.Isam.Esent.Interop.Api]::SetColumn(

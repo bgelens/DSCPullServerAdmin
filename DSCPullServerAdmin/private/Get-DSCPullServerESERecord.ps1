@@ -109,7 +109,7 @@ function Get-DSCPullServerESERecord {
                             try {
                                 [void][ipaddress]::Parse($_)
                                 $_
-                            } catch {}
+                            } catch { }
                         }
                     } elseif ($column.Name -in $boolColumns) {
                         $result."$($column.Name)" = [Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsBoolean(
@@ -136,7 +136,13 @@ function Get-DSCPullServerESERecord {
                             $column.Columnid
                         )
                         if ($column.Name -eq 'StatusData') {
-                            $result."$($column.Name)" = $data | ConvertFrom-Json -ErrorAction SilentlyContinue
+                            if ($null -ne $data) {
+                                if ($data.GetType() -like 'psobject*') {
+                                    $result."$($column.Name)" = $data
+                                } else {
+                                    $result."$($column.Name)" = $data | ConvertFrom-Json -ErrorAction SilentlyContinue
+                                }
+                            }
                         } else {
                             $result."$($column.Name)" = $data
                         }

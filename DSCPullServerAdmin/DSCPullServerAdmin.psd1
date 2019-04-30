@@ -27,10 +27,10 @@ Author = 'Ben Gelens'
 # CompanyName = 'Unknown'
 
 # Copyright statement for this module
-Copyright = '(c) 2018 Ben Gelens. All rights reserved.'
+Copyright = '(c) 2019 Ben Gelens. All rights reserved.'
 
 # Description of the functionality provided by this module
-Description = 'Get, manipulate and migrate data from your DSC Pull Server database (EDB and SQL)'
+Description = 'Get, manipulate and migrate data from your DSC Pull Server database (MDB, EDB and SQL)'
 
 # Minimum version of the Windows PowerShell engine required by this module
 PowerShellVersion = '5.1'
@@ -128,8 +128,8 @@ PrivateData = @{
         # ReleaseNotes of this module
         ReleaseNotes = 'EDB Fixes:
 
-* StatusReport move from Last to Previous. Issue: #43.
-* Registration and devices from from First to Next. Issue: #51'
+* Fixed deserialization issue for StatusData Issue: #54.
+* Fixed typecasting issue for ConfigurationNames / StatusData and Errors resulting in Pull Server errors. Issue: #56'
 
     } # End of PSData hashtable
 

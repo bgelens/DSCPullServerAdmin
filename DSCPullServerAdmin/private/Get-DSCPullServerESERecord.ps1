@@ -102,7 +102,7 @@ function Get-DSCPullServerESERecord {
                         $result = [DSCNodeStatusReport]::new()
                     }
                 }
-                foreach ($column in ([Microsoft.Isam.Esent.Interop.Api]::GetTableColumns($Connection.SessionId, $Connection.TableId))) {
+                foreach ($column in $actualColumns) {
                     if ($column.Name -eq 'IPAddress') {
                         $ipAddress = ([Microsoft.Isam.Esent.Interop.Api]::RetrieveColumnAsString(
                                 $Connection.SessionId,

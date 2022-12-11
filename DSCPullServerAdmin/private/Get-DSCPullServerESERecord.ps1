@@ -67,9 +67,15 @@ function Get-DSCPullServerESERecord {
             'StatusCode'
         )
 
+        $actualColumns = @()
+
         try {
             Mount-DSCPullServerESEDatabase -Connection $Connection -Mode None
             Open-DSCPullServerTable -Connection $Connection -Table $Table
+            # Preload table columns to avoid the 'too many tables open' issue.
+            foreach ($column in ([Microsoft.Isam.Esent.Interop.Api]::GetTableColumns($Connection.SessionId, $Connection.TableId))) {
+                $actualColumns += $column
+            }
         } catch {
             Write-Error -ErrorRecord $_ -ErrorAction Stop
         }
